@@ -52,3 +52,7 @@ node_modules/
 .github/
 **/tempobook/**
 node_modules
+
+#ide
+.idea
+.vscode

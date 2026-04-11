@@ -48,7 +48,7 @@ export default function BankLensNavbar({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-disconnect`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-plaid-disconnect`,
         {
           method: "POST",
           headers: {
