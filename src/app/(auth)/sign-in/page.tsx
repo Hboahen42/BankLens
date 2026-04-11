@@ -3,6 +3,8 @@ import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import BackgroundImage from "@/components/landing/BackgroundImage";
+
 
 interface LoginProps {
   searchParams: Promise<Message>;
@@ -20,18 +22,22 @@ export default async function SignInPage({ searchParams }: LoginProps) {
   }
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="relative overflow-hidden flex min-h-screen w-full">
+      <BackgroundImage />
+
       {/* ── Left Panel: Sign In Form ── */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-black px-10 py-12">
-        <div className="w-full max-w-[360px] flex flex-col items-center gap-6">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-10 py-12">
+        <div className="w-full max-w-md flex flex-col items-center gap-6">
 
           {/* Header */}
           <div className="flex flex-col items-center gap-0 w-full">
             {/* Logo wordmark */}
             <div className="flex flex-col items-center pb-6 w-full">
-              <span className="font-inter font-bold text-white text-2xl leading-8">
-                FinWise
-              </span>
+              <Link className="font-inter font-bold text-white text-2xl leading-8"
+                    href="/"
+              >
+                BankLens
+              </Link>
             </div>
             {/* Heading */}
             <div className="flex flex-col items-center pb-2 w-full">
@@ -68,19 +74,9 @@ export default async function SignInPage({ searchParams }: LoginProps) {
 
               {/* Password Field */}
               <div className="flex flex-col gap-[5px] p-1">
-                <div className="flex justify-between items-center">
-                  <label className="font-inter font-normal text-white text-sm leading-5 px-1">
-                    Password
-                  </label>
-                  <Link
-                    className="text-xs hover:underline transition-all"
-                    href="/forgot-password"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
-                  >
-                    Forgot Password?
-                  </Link>
-                </div>
-
+                <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                  Password
+                </label>
                 <Input
                   type="password"
                   name="password"
@@ -89,6 +85,13 @@ export default async function SignInPage({ searchParams }: LoginProps) {
                   className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
                   style={{ backgroundColor: "transparent" }}
                 />
+                <Link
+                    className="pt-2 text-right text-xs hover:underline transition-all"
+                    href="/forgot-password"
+                    style={{ color: "rgba(255,255,255,0.3)" }}
+                >
+                  Forgot Password?
+                </Link>
               </div>
 
               {/* Submit Button */}
@@ -150,11 +153,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
             $128,435
           </span>
           <div className="flex items-center gap-1">
-            <img
-              src="https://storage.googleapis.com/tempo-image-previews/figma-exports%2Fuser_3C3xQVlgsweckJrU0biFa9McaTF-1775890672916-node-I60%3A173%3B60%3A313-1775890672832.png"
-              alt="up arrow"
-              className="w-4 h-4 object-contain"
-            />
+            <ArrowUp className="w-4 h-4 text-[#34C759]" />
             <span className="font-inter font-normal text-[#1fa8b0] text-xs leading-4">
               +2.1% this month
             </span>
@@ -188,11 +187,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
             $3,465
           </span>
           <div className="flex items-center gap-1">
-            <img
-              src="https://storage.googleapis.com/tempo-image-previews/figma-exports%2Fuser_3C3xQVlgsweckJrU0biFa9McaTF-1775890672921-node-I60%3A165%3B60%3A313-1775890672832.png"
-              alt="up arrow"
-              className="w-4 h-4 object-contain"
-            />
+            <ArrowUp className="w-4 h-4 text-[#34C759]" />
             <span className="font-inter font-normal text-[#1fa8b0] text-xs leading-4">
               On track
             </span>

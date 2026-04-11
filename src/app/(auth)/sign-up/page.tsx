@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signUpAction } from "@/app/actions";
 import { UrlProvider } from "@/components/url-provider";
 import { Check } from "lucide-react";
+import BackgroundImage from "@/components/landing/BackgroundImage";
 
 export default async function Signup(props: {
   searchParams: Promise<Message>;
@@ -19,28 +20,32 @@ export default async function Signup(props: {
   }
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="relative overflow-hidden flex min-h-screen w-full">
+      <BackgroundImage />
+
       {/* ── Left Panel: Sign Up Form ── */}
-      <div className="flex flex-1 flex-col items-center justify-center bg-black px-10 py-12">
-        <div className="w-full max-w-[360px] flex flex-col items-center gap-6">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-10 py-12">
+        <div className="w-full max-w-md flex flex-col items-center gap-6">
 
           {/* Header */}
           <div className="flex flex-col items-center gap-0 w-full">
             {/* Logo wordmark */}
             <div className="flex flex-col items-center pb-6 w-full">
-              <span className="font-inter font-bold text-white text-2xl leading-8">
-                FinWise
-              </span>
+              <Link className="font-inter font-bold text-white text-2xl leading-8"
+                    href="/"
+              >
+                BankLens
+              </Link>
             </div>
             {/* Heading */}
             <div className="flex flex-col items-center pb-2 w-full">
-              <h1 className="text-white text-[40px] leading-9 font-normal" style={{ fontFamily: "Georgia, serif" }}>
-                Create Your Account
+              <h1 className="text-white text-center text-[40px] leading-9 font-normal" style={{ fontFamily: "Georgia, serif" }}>
+                Create Your Account!
               </h1>
             </div>
             {/* Subtitle */}
             <p className="font-inter font-normal text-white/60 text-sm leading-5">
-              Get started with FinWise today
+              Get started with BankLens today
             </p>
           </div>
 
@@ -160,11 +165,7 @@ export default async function Signup(props: {
             $1,330
           </span>
           <div className="flex items-center gap-1">
-            <img
-              src="https://storage.googleapis.com/tempo-image-previews/figma-exports%2Fuser_3C3xQVlgsweckJrU0biFa9McaTF-1775890949671-node-I60%3A191%3B60%3A309-1775890949600.png"
-              alt="check icon"
-              className="w-4 h-4 object-contain"
-            />
+            <Check className="w-4 h-4 text-[#34C759]" />
             <span className="font-inter font-normal text-[#1fa8b0] text-xs leading-4">
               Under budget
             </span>
