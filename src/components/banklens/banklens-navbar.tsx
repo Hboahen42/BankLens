@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LogOut, Unlink } from "lucide-react";
 import { toast } from "sonner";
+import {signOutAction} from "@/app/actions";
 
 interface BankLensNavbarProps {
   userEmail?: string;
@@ -48,7 +49,7 @@ export default function BankLensNavbar({
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-plaid-disconnect`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-disconnect`,
         {
           method: "POST",
           headers: {
@@ -173,10 +174,7 @@ export default function BankLensNavbar({
               <DropdownMenuItem
                 className="cursor-pointer focus:bg-white/5"
                 style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk, sans-serif" }}
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  router.push("/sign-in");
-                }}
+                onClick={() => signOutAction()}
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign out

@@ -54,12 +54,12 @@ export default async function SignInPage({ searchParams }: LoginProps) {
 
           {/* Form Card */}
           <div
-            className="w-full rounded-2xl px-[35px] py-[34px] flex flex-col gap-[10px] animate-fade-up anim-delay-4"
+            className="w-full rounded-2xl px-8.75 py-8.5 flex flex-col gap-2.5 animate-fade-up anim-delay-4"
             style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <form className="flex flex-col gap-[10px]">
+            <form className="flex flex-col gap-2.5">
               {/* Email Field */}
-              <div className="flex flex-col gap-[5px] p-1">
+              <div className="flex flex-col gap-1.25 p-1">
                 <label htmlFor="email" className="font-inter font-normal text-white text-sm leading-5 px-1">
                   Email Address
                 </label>
@@ -75,7 +75,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
               </div>
 
               {/* Password Field */}
-              <div className="flex flex-col gap-[5px] p-1">
+              <div className="flex flex-col gap-1.25 p-1">
                 <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
                   Password
                 </label>
@@ -98,7 +98,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4 flex flex-col gap-[10px]">
+              <div className="pt-4 flex flex-col gap-2.5">
                 <SubmitButton
                   formAction={signInAction}
                   pendingText="Signing in..."
@@ -113,7 +113,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
           </div>
 
           {/* Sign Up link */}
-          <div className="flex items-center gap-[3px] px-[10px] py-[10px] animate-fade-up anim-delay-5">
+          <div className="flex items-center gap-0.75 px-2.5 py-2.5 animate-fade-up anim-delay-5">
             <span className="font-inter font-normal text-white/60 text-sm leading-5">
               Don't have an account?
             </span>
@@ -136,17 +136,17 @@ export default async function SignInPage({ searchParams }: LoginProps) {
       >
         {/* Subtle organic blob shapes */}
         <div
-          className="absolute top-[-80px] right-[-80px] w-[420px] h-[420px] rounded-full opacity-30"
+          className="absolute -top-20 -right-20 w-105 h-105 rounded-full opacity-30"
           style={{ background: "radial-gradient(circle, #0d9488 0%, transparent 70%)" }}
         />
         <div
-          className="absolute bottom-[-60px] left-[-60px] w-[300px] h-[300px] rounded-full opacity-20"
+          className="absolute -bottom-15 -left-15 w-75 h-75 rounded-full opacity-20"
           style={{ background: "radial-gradient(circle, #0891b2 0%, transparent 70%)" }}
         />
 
         {/* NET WORTH card — top right */}
         <div
-          className="absolute top-[50px] right-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[160px] animate-float"
+          className="absolute top-12.5 right-12.5 rounded-2xl px-3.75 py-3 flex flex-col gap-2 min-w-40 animate-float"
           style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
         >
           <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">
@@ -173,14 +173,14 @@ export default async function SignInPage({ searchParams }: LoginProps) {
             <br />
             at a glance
           </h2>
-          <p className="font-inter font-normal text-white/60 text-sm leading-5 max-w-[280px]">
+          <p className="font-inter font-normal text-white/60 text-sm leading-5 max-w-70">
             Connect all your accounts and get a complete picture of your financial life
           </p>
         </div>
 
         {/* MONTHLY SAVINGS card — bottom left */}
         <div
-          className="absolute bottom-[50px] left-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[140px] animate-float2"
+          className="absolute bottom-12.5 left-12.5 rounded-2xl px-3.75 py-3 flex flex-col gap-2 min-w-35 animate-float2"
           style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
         >
           <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">

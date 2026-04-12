@@ -5,6 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "../../supabase/server";
 
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("AuthActions");
+
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
@@ -32,16 +36,17 @@ export const signUpAction = async (formData: FormData) => {
     },
   });
 
-  console.log("After signUp", error);
+  logger.info("After signUp", { error: error?.message, errorCode: error?.code });
 
 
   if (error) {
-    console.error(error.code + " " + error.message);
+    logger.error("Signup error", { code: error.code, message: error.message });
     return encodedRedirect("error", "/sign-up", error.message);
   }
 
   if (user) {
     try {
+      logger.info("Creating user profile", { userId: user.id });
       const { error: updateError } = await supabase
         .from('users')
         .insert({
@@ -55,10 +60,10 @@ export const signUpAction = async (formData: FormData) => {
         });
 
       if (updateError) {
-        console.error('Error updating user profile:', updateError);
+        logger.error('Error updating user profile', { error: updateError });
       }
     } catch (err) {
-      console.error('Error in user profile creation:', err);
+      logger.error('Error in user profile creation', { error: err });
     }
   }
 
@@ -80,9 +85,11 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
+    logger.error("Sign-in error", { message: error.message });
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
+  logger.info("User signed in successfully", { email });
   return redirect("/dashboard");
 };
 
@@ -101,13 +108,15 @@ export const forgotPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    console.error(error.message);
+    logger.error("Reset password error", { message: error.message });
     return encodedRedirect(
       "error",
       "/forgot-password",
       "Could not reset password",
     );
   }
+
+  logger.info("Password reset email sent", { email });
 
   if (callbackUrl) {
     return redirect(callbackUrl);
@@ -147,6 +156,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
+    logger.error("Password update failed", { message: error.message });
     encodedRedirect(
       "error",
       "/dashboard/reset-password",
@@ -154,11 +164,13 @@ export const resetPasswordAction = async (formData: FormData) => {
     );
   }
 
+  logger.info("Password updated successfully");
   encodedRedirect("success", "/protected/reset-password", "Password updated");
 };
 
 export const signOutAction = async () => {
   const supabase = await createClient();
+  logger.info("User signing out");
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };

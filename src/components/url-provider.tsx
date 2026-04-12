@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("UrlProvider");
 
 interface UrlProviderProps {
   children: React.ReactNode;
@@ -21,7 +24,7 @@ export function UrlProvider({ children }: UrlProviderProps) {
     
     // If we're using a proxy like ngrok, log for debugging
     if (isProxy) {
-      console.log('Using proxy URL for redirects:', baseUrl);
+      logger.info('Using proxy URL for redirects', { baseUrl });
     }
   }, []);
 

@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+import {withAxiom} from 'next-axiom';
 
 const nextConfig = {
     images: {
@@ -12,5 +13,4 @@ const nextConfig = {
 };
 
 
-
-module.exports = nextConfig;
+export default withAxiom(nextConfig);

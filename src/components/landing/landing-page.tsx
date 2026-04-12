@@ -42,7 +42,7 @@ function HeroSection() {
 
       {/* Hero content */}
         <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
-            <h1 className="font-serif font-normal text-white text-[70px] leading-[60px] mb-6 animate-fade-up anim-delay-1">
+            <h1 className="font-serif font-normal text-white text-[70px] leading-15 mb-6 animate-fade-up anim-delay-1">
                 Your Smart Financial{" "}
                 <span className="text-[#1fa8b0] font-serif font-normal">Companion</span>
             </h1>
@@ -104,7 +104,7 @@ function FeatureCard({
 function FeaturesSection() {
   return (
     <section className="bg-[#111211] py-20 px-10">
-      <div className="max-w-[1230px] mx-auto">
+      <div className="max-w-307.5 mx-auto">
         {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="text-white font-serif font-normal text-[40px] leading-9 mb-5 animate-fade-up">
@@ -183,7 +183,7 @@ function FeaturesSection() {
 ────────────────────────────────────────────── */
 function CTASection() {
   return (
-    <section className="bg-[#111211] py-20 px-10 lg:py-28 lg:px-[122px]">
+    <section className="bg-[#111211] py-20 px-10 lg:py-28 lg:px-30.5">
       <div
         className="rounded-2xl px-20 py-16 flex flex-col items-center text-center animate-fade-up anim-delay-6"
         style={{
@@ -213,7 +213,7 @@ function CTASection() {
 function LandingFooter() {
   return (
     <footer className="bg-[#111211] border-t border-white/10 px-10 py-12">
-      <div className="max-w-[1230px] mx-auto flex items-center justify-between">
+      <div className="max-w-307.5 mx-auto flex items-center justify-between">
         <span className="text-white font-inter font-semibold text-sm">BankLens</span>
         <span className="text-white/60 font-inter font-semibold text-sm">
           © 2026 BankLens. All rights reserved.

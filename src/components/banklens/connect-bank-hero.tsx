@@ -19,10 +19,11 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      console.log("Session:", session?.access_token);
 
       // Create link token
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-plaid-create-link-token`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-create-link-token`,
         {
           method: "POST",
           headers: {
@@ -33,11 +34,12 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
       );
 
       const data = await res.json();
+      console.log("Link token response:", data);
 
       if (data.mock) {
         // Mock flow: skip Plaid UI, exchange mock token directly
         const exchangeRes = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-plaid-exchange-token`,
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-exchange-token`,
           {
             method: "POST",
             headers: {
@@ -61,7 +63,7 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
           token: data.link_token,
           onSuccess: async (public_token: string) => {
             const exchangeRes = await fetch(
-              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/supabase-functions-plaid-exchange-token`,
+              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-exchange-token`,
               {
                 method: "POST",
                 headers: {

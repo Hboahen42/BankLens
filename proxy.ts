@@ -1,10 +1,9 @@
-import React from "react";
 import { updateSession } from "./supabase/middleware";
-import { type NextRequest } from "next/server";
+import { withAxiom, AxiomRequest } from "next-axiom";
 
-export async function proxy(request: NextRequest) {
+export const proxy = withAxiom(async (request: AxiomRequest) => {
   return await updateSession(request);
-}
+});
 
 export const config = {
   matcher: [
