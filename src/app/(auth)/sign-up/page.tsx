@@ -30,7 +30,7 @@ export default async function Signup(props: {
           {/* Header */}
           <div className="flex flex-col items-center gap-0 w-full">
             {/* Logo wordmark */}
-            <div className="flex flex-col items-center pb-6 w-full">
+            <div className="flex flex-col items-center pb-6 w-full animate-fade-up anim-delay-1">
               <Link className="font-inter font-bold text-white text-2xl leading-8"
                     href="/"
               >
@@ -38,20 +38,20 @@ export default async function Signup(props: {
               </Link>
             </div>
             {/* Heading */}
-            <div className="flex flex-col items-center pb-2 w-full">
+            <div className="flex flex-col items-center pb-2 w-full animate-fade-up anim-delay-2">
               <h1 className="text-white text-center text-[40px] leading-9 font-normal" style={{ fontFamily: "Georgia, serif" }}>
                 Create Your Account!
               </h1>
             </div>
             {/* Subtitle */}
-            <p className="font-inter font-normal text-white/60 text-sm leading-5">
+            <p className="font-inter font-normal text-white/60 text-sm leading-5 animate-fade-up anim-delay-3 text-center">
               Get started with BankLens today
             </p>
           </div>
 
           {/* Form Card */}
           <div
-            className="w-full rounded-2xl px-[35px] py-[34px] flex flex-col gap-[10px]"
+            className="w-full rounded-2xl px-[35px] py-[34px] flex flex-col gap-[10px] animate-fade-up anim-delay-4"
             style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
           >
             <UrlProvider>
@@ -125,7 +125,7 @@ export default async function Signup(props: {
           </div>
 
           {/* Sign In link */}
-          <div className="flex items-center gap-[3px] px-[10px] py-[10px]">
+          <div className="flex items-center gap-[3px] px-[10px] py-[10px] animate-fade-up anim-delay-5">
             <span className="font-inter font-normal text-white/60 text-sm leading-5">
               Already have an account?
             </span>
@@ -158,7 +158,7 @@ export default async function Signup(props: {
 
         {/* FREE TO SPEND card — top right */}
         <div
-          className="absolute top-[50px] right-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[160px]"
+          className="absolute top-[50px] right-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[160px] animate-float2"
           style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
         >
           <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">
@@ -192,7 +192,7 @@ export default async function Signup(props: {
 
         {/* SUBSCRIPTIONS card — bottom left */}
         <div
-          className="absolute bottom-[50px] left-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[140px]"
+          className="absolute bottom-[50px] left-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[140px] animate-float"
           style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
         >
           <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">

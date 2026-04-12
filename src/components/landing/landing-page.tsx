@@ -42,25 +42,25 @@ function HeroSection() {
 
       {/* Hero content */}
         <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
-            <h1 className="font-serif font-normal text-white text-[70px] leading-[60px] mb-6">
+            <h1 className="font-serif font-normal text-white text-[70px] leading-[60px] mb-6 animate-fade-up anim-delay-1">
                 Your Smart Financial{" "}
                 <span className="text-[#1fa8b0] font-serif font-normal">Companion</span>
             </h1>
-            <p className="font-dm-sans font-normal text-white/90 text-lg leading-7 mb-10 max-w-xl mx-auto">
+            <p className="font-dm-sans font-normal text-white/90 text-lg leading-7 mb-10 max-w-xl mx-auto animate-fade-up anim-delay-2">
                 Take control of your finances with BankLens. Connect your bank accounts, track spending,
                 and gain insights into your financial health all in one place.
             </p>
-            <div className="flex items-center justify-center gap-5">
+            <div className="flex items-center justify-center gap-5 animate-fade-up anim-delay-3">
                 <Link
                     href="/sign-up"
-                    className="inline-flex items-center gap-2 bg-white/10 border border-white/30 backdrop-blur-sm text-white font-inter font-normal text-sm px-4 py-2 rounded-md hover:bg-white/20 transition-colors"
+                    className="group flex items-center gap-2 rounded-md bg-linear-to-r from-teal-500 to-cyan-500 px-7 py-3.5 text-sm font-semibold text-white border border-white/20 shadow-lg shadow-teal-500/25 transition-all hover:shadow-teal-500/40 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/5"
                 >
                     Start Free Today
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                     href="/sign-in"
-                    className="inline-flex items-center text-white font-inter font-normal text-sm px-4 py-2 rounded-md border border-white/20 hover:bg-white/10 transition-colors"
+                    className="rounded-md border border-white/20 px-7 py-3.5 text-sm font-medium text-zinc-200 transition-all hover:border-white/30 hover:text-white hover:bg-white/5"
                 >
                     Sign In
                 </Link>
@@ -185,7 +185,7 @@ function CTASection() {
   return (
     <section className="bg-[#111211] py-20 px-10 lg:py-28 lg:px-[122px]">
       <div
-        className="rounded-2xl px-20 py-16 flex flex-col items-center text-center"
+        className="rounded-2xl px-20 py-16 flex flex-col items-center text-center animate-fade-up anim-delay-6"
         style={{
           background: "linear-gradient(135deg, #0d9488 0%, #0891b2 100%)",
         }}
@@ -193,12 +193,12 @@ function CTASection() {
         <h2 className="text-white font-serif font-normal text-[40px] leading-9 mb-5">
           Ready to take control of your finances?
         </h2>
-        <p className="text-white/90 font-dm-sans font-normal text-lg leading-7 mb-16">
-          Join the thousands of users who trust FinWise with their financial data
+        <p className="text-white/90 font-dm-sans font-normal text-lg leading-7 mb-8">
+          Join the thousands of users who trust BankLens with their financial data
         </p>
         <Link
           href="/sign-up"
-          className="inline-flex items-center bg-white/10 border border-white/30 backdrop-blur-sm text-white font-inter font-normal text-sm px-8 py-3 rounded-md hover:bg-white/20 transition-colors"
+          className="relative mt-2 inline-block rounded-md bg-white px-8 py-3.5 text-sm font-semibold text-zinc-900 shadow-lg transition-all hover:bg-zinc-100 hover:-translate-y-0.5 hover:shadow-xl"
         >
           Get Started for Free
         </Link>

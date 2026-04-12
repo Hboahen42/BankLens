@@ -98,11 +98,19 @@
   50% { transform: translateY(-8px); }
 }
 
+@keyframes float2 {
+  1%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+
 .animate-fade-up {
   animation: fade-up 0.7s ease-out both;
 }
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+.animate-float2 {
+  animation: float2 6s ease-in-out infinite;
 }
 .anim-delay-1 { animation-delay: 0.1s; }
 .anim-delay-2 { animation-delay: 0.2s; }
