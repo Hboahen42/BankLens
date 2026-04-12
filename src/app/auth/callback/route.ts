@@ -24,7 +24,9 @@ export const GET = async (request: NextRequest) => {
   }
 
   // URL to redirect to after sign-in process completes
-  const redirectTo = redirect_to || "/dashboard";
+  const redirectToRaw = redirect_to || "/dashboard";
+
+  const redirectTo = redirectToRaw.startsWith("/") && !redirectToRaw.startsWith("//") ? redirectToRaw : "/dashboard";
   log.debug({ redirectTo }, "Redirecting after auth callback");
   return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
 };

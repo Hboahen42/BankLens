@@ -9,6 +9,18 @@ interface LogMeta {
   [key: string]: unknown;
 }
 
+const REDACT_KEYS = /(token|secret|password|authorization|cookie|account|routing)/i;
+
+function sanitizeMeta(meta?: LogMeta): LogMeta | undefined {
+    if (!meta) return undefined;
+    return Object.fromEntries(
+         Object.entries(meta).map(([key, value]) => [
+              key,
+              REDACT_KEYS.test(key) ? "[REDACTED]" : value,
+         ]),
+    );
+}
+
 function emit(level: LogLevel, module: string, requestId: string | undefined, msg: string, meta?: LogMeta) {
   const entry = {
     level,
@@ -16,7 +28,7 @@ function emit(level: LogLevel, module: string, requestId: string | undefined, ms
     module,
     requestId,
     msg,
-    ...meta,
+    meta: sanitizeMeta(meta),
   };
   const line = JSON.stringify(entry);
   if (level === "error") {

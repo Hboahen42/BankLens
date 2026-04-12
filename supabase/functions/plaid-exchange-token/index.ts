@@ -191,7 +191,11 @@ Deno.serve(async (req) => {
         });
         const syncData = await syncResp.json();
         if (!syncResp.ok) {
-          break;
+          log.error("Plaid transaction sync failed", {
+            status: syncResp.status,
+            plaidError: syncData,
+          });
+          throw new Error(syncData.error_message || "Transaction sync failed");
         }
         added = added.concat(syncData.added);
         hasMore = syncData.has_more;
@@ -251,7 +255,10 @@ Deno.serve(async (req) => {
 
       if (savedAccount) {
         accountsSaved++;
-        const accTransactions = transactions.slice(0, 15);
+        const accTransactions = transactions
+            .filter((tx: any) => !tx.account_id || tx.account_id === acc.account_id)
+            .slice(0, 15);
+
         let txSaved = 0;
         for (const tx of accTransactions) {
           const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");

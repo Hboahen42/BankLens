@@ -7,6 +7,8 @@ import { createClient } from "../../supabase/server";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("auth");
+const maskEmail = (email: string) =>
+email ? email.replace(/(^.).*(@.*$)/, "$1*****$2") : undefined;
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -24,7 +26,7 @@ export const signUpAction = async (formData: FormData) => {
     );
   }
 
-  log.info({ email }, "Sign-up initiated");
+  log.info({ email: maskEmail(email) }, "Sign-up initiated");
 
   const { data: { user }, error } = await supabase.auth.signUp({
     email,
@@ -39,12 +41,12 @@ export const signUpAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.error({ email, error: error.message }, "Sign-up failed");
+    log.error({ email: maskEmail(email), error: error.message }, "Sign-up failed");
     return encodedRedirect("error", "/sign-up", error.message);
   }
 
   if (user) {
-    log.info({ userId: user.id, email }, "User created, inserting profile");
+    log.info({ userId: user.id, email: maskEmail(email) }, "User created, inserting profile");
     try {
       const { error: updateError } = await supabase
         .from('users')
@@ -66,7 +68,7 @@ export const signUpAction = async (formData: FormData) => {
     }
   }
 
-  log.info({ email }, "Sign-up completed, verification email sent");
+  log.info({ email: maskEmail(email) }, "Sign-up completed, verification email sent");
   return encodedRedirect(
     "success",
     "/sign-up",
@@ -79,7 +81,7 @@ export const signInAction = async (formData: FormData) => {
   const password = formData.get("password") as string;
   const supabase = await createClient();
 
-  log.info({ email }, "Sign-in attempt");
+  log.info({ email: maskEmail(email) }, "Sign-in attempt");
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -87,11 +89,11 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.warn({ email, error: error.message }, "Sign-in failed");
+    log.warn({ email: maskEmail(email), error: error.message }, "Sign-in failed");
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
-  log.info({ email }, "Sign-in successful");
+  log.info({ email: maskEmail(email) }, "Sign-in successful");
   return redirect("/dashboard");
 };
 
@@ -106,14 +108,14 @@ export const forgotPasswordAction = async (formData: FormData) => {
     return encodedRedirect("error", "/forgot-password", "Email is required");
   }
 
-  log.info({ email }, "Password reset requested");
+  log.info({ email: maskEmail(email) }, "Password reset requested");
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${origin}/auth/callback?redirect_to=/protected/reset-password`,
   });
 
   if (error) {
-    log.error({ email, error: error.message }, "Password reset email failed");
+    log.error({ email: maskEmail(email) , error: error.message }, "Password reset email failed");
     return encodedRedirect(
       "error",
       "/forgot-password",
@@ -121,7 +123,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
     );
   }
 
-  log.info({ email }, "Password reset email sent");
+  log.info({ email: maskEmail(email) }, "Password reset email sent");
 
   if (callbackUrl) {
     return redirect(callbackUrl);

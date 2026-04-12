@@ -74,6 +74,9 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       .order("created_at", { ascending: true });
 
     if (error) {
+      console.error("Error fetching accounts:", error);
+      setAccounts([]);
+      return false;
     }
 
     if (data && data.length > 0) {
@@ -99,6 +102,11 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
         .range(offset, offset + PAGE_SIZE - 1);
 
       if (error) {
+        console.error("Error fetching transactions:", error);
+        if(!append) setTransactions([]);
+        setHasMore(false);
+        setTxLoading(false);
+        return;
       }
 
       if (data) {
@@ -118,6 +126,9 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
   const checkConnection = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
+      setIsConnected(false);
+      setAccounts([]);
+      setTransactions([]);
       return;
     }
 

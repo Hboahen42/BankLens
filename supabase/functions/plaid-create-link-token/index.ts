@@ -99,10 +99,11 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    log.error("Unhandled exception", { error: error.message });
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    log.error("Unhandled exception", { error: message });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status: 500,
     });
   }
 });

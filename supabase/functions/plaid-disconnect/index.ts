@@ -7,6 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const redactId = (id: string) => `${id.slice(0, 4)}...${id.slice(-4)}`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });
@@ -44,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    log.info("User authenticated", { userId: user.id });
+    log.info("User authenticated", { userId: redactId(user.id) });
 
     // Get user from public.users
     const { data: publicUser } = await supabase
@@ -54,14 +56,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (!publicUser) {
-      log.warn("Public user record not found", { userId: user.id });
+      log.warn("Public user record not found", { userId: redactId(user.id) });
       return new Response(JSON.stringify({ error: "User not found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 404,
       });
     }
 
-    log.info("Deleting Plaid connections", { userId: user.id, publicUserId: publicUser.id });
+    log.info("Deleting Plaid connections", { userId: redactId(user.id), publicUserId: redactId(publicUser.id) });
 
     const { error: deleteError, count } = await supabase
       .from("plaid_connections")
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
       throw new Error(deleteError.message);
     }
 
-    log.info("Bank disconnected successfully", { userId: user.id, deletedCount: count });
+    log.info("Bank disconnected successfully", { userId: redactId(user.id), deletedCount: count });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

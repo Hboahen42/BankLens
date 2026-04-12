@@ -1,7 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import {createLogger} from "@/lib/logger";
 
+const logger = createLogger("proxy");
 
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
@@ -31,8 +33,8 @@ export async function proxy(req: NextRequest) {
   const { data: { session }, error } = await supabase.auth.getSession()
 
   if (error) {
+    logger.error({ error: error.message}, "Auth session error");
   }
-
   return res
 }
 
