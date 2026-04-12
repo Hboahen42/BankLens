@@ -2,8 +2,10 @@ import { signInAction } from "@/app/actions";
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import { ArrowUp } from "lucide-react";
+import BackgroundImage from "@/components/landing/BackgroundImage";
+
 
 interface LoginProps {
   searchParams: Promise<Message>;
@@ -21,134 +23,179 @@ export default async function SignInPage({ searchParams }: LoginProps) {
   }
 
   return (
-    <div
-      className="banklens-bg flex flex-col items-center justify-center min-h-screen px-4 py-8"
-      style={{ backgroundColor: "#0F1117" }}
-    >
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-8">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: "#00D4AA" }}
-        >
-          <span
-            className="text-xs font-bold"
-            style={{ color: "#0F1117", fontFamily: "Syne, sans-serif" }}
-          >
-            BL
-          </span>
-        </div>
-        <span
-          className="text-xl font-extrabold tracking-tight"
-          style={{ fontFamily: "Syne, sans-serif", color: "#ffffff" }}
-        >
-          BankLens
-        </span>
-      </div>
+    <div className="relative overflow-hidden flex min-h-screen w-full">
+      <BackgroundImage />
 
-      <div
-        className="w-full max-w-md rounded-2xl p-8"
-        style={{
-          backgroundColor: "#181C27",
-          border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 24px 64px rgba(0,0,0,0.5)",
-        }}
-      >
-        <form className="flex flex-col space-y-6">
-          <div className="space-y-1 text-center">
-            <h1
-              className="text-2xl font-bold tracking-tight"
-              style={{ fontFamily: "Syne, sans-serif", color: "#ffffff" }}
-            >
-              Welcome back
-            </h1>
-            <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "Space Grotesk, sans-serif" }}>
-              Don't have an account?{" "}
-              <Link
-                className="font-medium hover:underline transition-all"
-                href="/sign-up"
-                style={{ color: "#00D4AA" }}
+      {/* ── Left Panel: Sign In Form ── */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-10 py-12">
+        <div className="w-full max-w-md flex flex-col items-center gap-6">
+
+          {/* Header */}
+          <div className="flex flex-col items-center gap-0 w-full">
+            {/* Logo wordmark */}
+            <div className="flex flex-col items-center pb-6 w-full">
+              <Link className="font-inter font-bold text-white text-2xl leading-8"
+                    href="/"
               >
-                Sign up
+                BankLens
               </Link>
+            </div>
+            {/* Heading */}
+            <div className="flex flex-col items-center pb-2 w-full">
+              <h1 className="text-white text-[40px] leading-9 font-normal" style={{ fontFamily: "Georgia, serif" }}>
+                Welcome Back!
+              </h1>
+            </div>
+            {/* Subtitle */}
+            <p className="font-inter font-normal text-white/60 text-sm leading-5">
+              Sign in to your account
             </p>
           </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium"
-                style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk, sans-serif" }}
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-                className="w-full"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.9)",
-                  fontFamily: "Space Grotesk, sans-serif",
-                }}
-              />
-            </div>
+          {/* Form Card */}
+          <div
+            className="w-full rounded-2xl px-[35px] py-[34px] flex flex-col gap-[10px]"
+            style={{ backgroundColor: "#111111", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <form className="flex flex-col gap-[10px]">
+              {/* Email Field */}
+              <div className="flex flex-col gap-[5px] p-1">
+                <label htmlFor="email" className="font-inter font-normal text-white text-sm leading-5 px-1">
+                  Email Address
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                  className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ backgroundColor: "transparent" }}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium"
-                  style={{ color: "rgba(255,255,255,0.6)", fontFamily: "Space Grotesk, sans-serif" }}
-                >
+              {/* Password Field */}
+              <div className="flex flex-col gap-[5px] p-1">
+                <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
                   Password
-                </Label>
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  name="password"
+                  placeholder="Enter a strong password"
+                  required
+                  className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ backgroundColor: "transparent" }}
+                />
                 <Link
-                  className="text-xs hover:underline transition-all"
-                  href="/forgot-password"
-                  style={{ color: "rgba(255,255,255,0.3)" }}
+                    className="pt-2 text-right text-xs hover:underline transition-all"
+                    href="/forgot-password"
+                    style={{ color: "rgba(255,255,255,0.3)" }}
                 >
                   Forgot Password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                name="password"
-                placeholder="Your password"
-                required
-                className="w-full"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.9)",
-                  fontFamily: "Space Grotesk, sans-serif",
-                }}
-              />
-            </div>
+
+              {/* Submit Button */}
+              <div className="pt-4 flex flex-col gap-[10px]">
+                <SubmitButton
+                  formAction={signInAction}
+                  pendingText="Signing in..."
+                  className="w-full bg-white text-black font-inter font-normal text-sm leading-5 py-2 rounded-md hover:bg-white/90 transition-colors"
+                >
+                  Sign In
+                </SubmitButton>
+              </div>
+
+              <FormMessage message={message} />
+            </form>
           </div>
 
-          <SubmitButton
-            className="w-full py-3 rounded-xl font-semibold btn-teal"
-            pendingText="Signing in..."
-            formAction={signInAction}
-            style={{
-              backgroundColor: "#00D4AA",
-              color: "#0F1117",
-              fontFamily: "Space Grotesk, sans-serif",
-              fontWeight: 600,
-            }}
-          >
-            Sign in
-          </SubmitButton>
+          {/* Sign Up link */}
+          <div className="flex items-center gap-[3px] px-[10px] py-[10px]">
+            <span className="font-inter font-normal text-white/60 text-sm leading-5">
+              Don't have an account?
+            </span>
+            <Link
+              href="/sign-up"
+              className="font-inter font-semibold text-[#1fa8b0] text-sm leading-5 hover:underline"
+            >
+              Sign Up
+            </Link>
+          </div>
+        </div>
+      </div>
 
-          <FormMessage message={message} />
-        </form>
+      {/* ── Right Panel: Decorative / Branding ── */}
+      <div
+        className="hidden lg:flex flex-1 relative overflow-hidden"
+        style={{
+          background: "radial-gradient(ellipse at 60% 40%, #0d4a45 0%, #0a3530 40%, #061a18 100%)",
+        }}
+      >
+        {/* Subtle organic blob shapes */}
+        <div
+          className="absolute top-[-80px] right-[-80px] w-[420px] h-[420px] rounded-full opacity-30"
+          style={{ background: "radial-gradient(circle, #0d9488 0%, transparent 70%)" }}
+        />
+        <div
+          className="absolute bottom-[-60px] left-[-60px] w-[300px] h-[300px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, #0891b2 0%, transparent 70%)" }}
+        />
+
+        {/* NET WORTH card — top right */}
+        <div
+          className="absolute top-[50px] right-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[160px]"
+          style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">
+            Net Worth
+          </span>
+          <span className="font-inter font-bold text-white text-2xl leading-8">
+            $128,435
+          </span>
+          <div className="flex items-center gap-1">
+            <ArrowUp className="w-4 h-4 text-[#34C759]" />
+            <span className="font-inter font-normal text-[#1fa8b0] text-xs leading-4">
+              +2.1% this month
+            </span>
+          </div>
+        </div>
+
+        {/* Center text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-16 text-center">
+          <h2
+            className="text-white text-[40px] leading-9 font-normal mb-3"
+            style={{ fontFamily: "Georgia, serif" }}
+          >
+            Your finances,
+            <br />
+            at a glance
+          </h2>
+          <p className="font-inter font-normal text-white/60 text-sm leading-5 max-w-[280px]">
+            Connect all your accounts and get a complete picture of your financial life
+          </p>
+        </div>
+
+        {/* MONTHLY SAVINGS card — bottom left */}
+        <div
+          className="absolute bottom-[50px] left-[50px] rounded-2xl px-[15px] py-[12px] flex flex-col gap-2 min-w-[140px]"
+          style={{ backgroundColor: "#0d1f1e", border: "1px solid rgba(255,255,255,0.1)" }}
+        >
+          <span className="font-inter font-normal text-white/60 text-xs leading-4 tracking-widest uppercase">
+            Monthly Savings
+          </span>
+          <span className="font-inter font-bold text-[#1fa8b0] text-2xl leading-8">
+            $3,465
+          </span>
+          <div className="flex items-center gap-1">
+            <ArrowUp className="w-4 h-4 text-[#34C759]" />
+            <span className="font-inter font-normal text-[#1fa8b0] text-xs leading-4">
+              On track
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

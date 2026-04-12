@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { TempoInit } from "@/components/tempo-init";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({
+    variable: "--font-dm-sans",
+    subsets: ["latin"]
+});
 
 export const metadata: Metadata = {
-  title: "Tempo - Modern SaaS Starter",
-  description: "A modern full-stack starter template powered by Next.js",
+  title: "BankLens — Your Smart Financial Companion",
+  description: "Take control of your finances with BankLens. Connect your bank accounts, track spending, and gain insights into your financial health.",
 };
 
 export default function RootLayout({
@@ -26,10 +29,10 @@ export default function RootLayout({
         />
       </head>
       
-      <body className={inter.className}>
+      <body className={`${dmSans.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="Dark"
           enableSystem
           disableTransitionOnChange
         >

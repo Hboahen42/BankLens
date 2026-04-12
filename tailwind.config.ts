@@ -18,6 +18,13 @@ const config = {
   		}
   	},
   	extend: {
+      fontFamily: {
+        inter: ["Inter", "sans-serif"],
+        "dm-sans": ["DM Sans", "sans-serif"],
+        syne: ["Syne", "sans-serif"],
+        "space-grotesk": ["Space Grotesk", "sans-serif"],
+        "jetbrains-mono": ["JetBrains Mono", "monospace"],
+      },
   		colors: {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
