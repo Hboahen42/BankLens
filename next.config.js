@@ -9,7 +9,6 @@ const nextConfig = {
         ],
     },
     serverExternalPackages: ['pino', 'pino-pretty', '@logtail/pino'],
-    turbopack: false,
 };
 
 module.exports = nextConfig;

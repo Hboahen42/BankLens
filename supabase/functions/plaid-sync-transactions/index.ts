@@ -46,7 +46,16 @@ Deno.serve(async (req) => {
 
     if (is_webhook_trigger && authHeader.replace("Bearer ", "") === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
       // Get the user_id from the connection if not provided
-      const { data: conn } = await supabase.from("plaid_connections").select("user_id").eq("id", connection_id).single();
+      const { data: conn, error } = await supabase.from("plaid_connections").select("user_id").eq("id", connection_id).single();
+
+      if (error) {
+        console.error(`[${requestId}] Database error fetching connection: ${error.message}`);
+        return new Response(JSON.stringify({ error: "Database error", message: error.message }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+
       if (!conn) {
         return new Response(JSON.stringify({ error: "Connection not found" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
