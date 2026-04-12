@@ -61,7 +61,7 @@ function InstitutionBadge({ name, color }: { name: string; color: string }) {
 
   return (
     <div
-      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0"
       style={{
         backgroundColor: color + "22",
         border: `1px solid ${color}44`,

@@ -1,10 +1,9 @@
-import React from "react";
 import { updateSession } from "./supabase/middleware";
-import { type NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export const proxy = async (request: NextRequest) => {
   return await updateSession(request);
-}
+};
 
 export const config = {
   matcher: [

@@ -94,7 +94,7 @@ function TransactionRow({
       <div className="flex items-center gap-4 min-w-0">
         {/* Category icon */}
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0"
           style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
         >
           {categoryIcon}
@@ -135,7 +135,7 @@ function TransactionRow({
       </div>
 
       {/* Amount + date */}
-      <div className="text-right flex-shrink-0 ml-4">
+      <div className="text-right shrink-0 ml-4">
         <p
           className="text-sm font-semibold"
           style={{

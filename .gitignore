@@ -56,3 +56,7 @@ node_modules
 #ide
 .idea
 .vscode
+
+# logs
+/logs/*.log
+/logs/*.log.*

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "../../../supabase/client";
+
 import BankLensNavbar from "@/components/banklens/banklens-navbar";
 import ConnectBankHero from "@/components/banklens/connect-bank-hero";
 import BalanceCards from "@/components/banklens/balance-cards";
@@ -57,11 +58,12 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       .select("id")
       .eq("user_id", authUserId)
       .single();
+    if (!data) return null;
     return data?.id || null;
   }, [supabase]);
 
   const fetchAccounts = useCallback(async (pubUserId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("plaid_accounts")
       .select(`
         id, name, official_name, type, subtype,
@@ -70,6 +72,12 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       `)
       .eq("user_id", pubUserId)
       .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching accounts:", error);
+      setAccounts([]);
+      return false;
+    }
 
     if (data && data.length > 0) {
       setAccounts(
@@ -86,12 +94,20 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
   const fetchTransactions = useCallback(
     async (pubUserId: string, offset = 0, append = false) => {
       setTxLoading(!append);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("plaid_transactions")
         .select("id, merchant_name, name, amount, date, category, pending, currency_code")
         .eq("user_id", pubUserId)
         .order("date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
+
+      if (error) {
+        console.error("Error fetching transactions:", error);
+        if(!append) setTransactions([]);
+        setHasMore(false);
+        setTxLoading(false);
+        return;
+      }
 
       if (data) {
         if (append) {
@@ -109,7 +125,12 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
 
   const checkConnection = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setIsConnected(false);
+      setAccounts([]);
+      setTransactions([]);
+      return;
+    }
 
     const pubId = await getPublicUserId(user.id);
     if (!pubId) return;
@@ -119,6 +140,7 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
     setIsConnected(hasAccounts);
     if (hasAccounts) {
       await fetchTransactions(pubId, 0, false);
+    } else {
     }
   }, [supabase, getPublicUserId, fetchAccounts, fetchTransactions]);
 

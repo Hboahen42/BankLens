@@ -1,17 +1,32 @@
 import { createClient } from "../../../../supabase/server";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+import { createLogger } from "@/lib/logger";
 
-export async function GET(request: Request) {
+const log = createLogger("auth:callback");
+
+export const GET = async (request: NextRequest) => {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const redirect_to = requestUrl.searchParams.get("redirect_to");
 
+  log.info({ redirect_to }, "Auth callback triggered");
+
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      log.error({ error: error.message }, "Failed to exchange code for session");
+    } else {
+      log.info("Session exchanged successfully");
+    }
+  } else {
+    log.warn("Auth callback hit without an authorization code");
   }
 
-  // URL to redirect to after sign in process completes
-  const redirectTo = redirect_to || "/dashboard";
+  // URL to redirect to after sign-in process completes
+  const redirectToRaw = redirect_to || "/dashboard";
+
+  const redirectTo = redirectToRaw.startsWith("/") && !redirectToRaw.startsWith("//") ? redirectToRaw : "/dashboard";
+  log.debug({ redirectTo }, "Redirecting after auth callback");
   return NextResponse.redirect(new URL(redirectTo, requestUrl.origin));
-} 
+};

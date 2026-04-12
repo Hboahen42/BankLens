@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
     images: {
         remotePatterns: [
@@ -8,9 +7,8 @@ const nextConfig = {
                 hostname: 'images.unsplash.com',
             },
         ],
-    }
+    },
+    serverExternalPackages: ['pino', 'pino-pretty', '@logtail/pino'],
 };
-
-
 
 module.exports = nextConfig;
