@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "../../../supabase/client";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("BankLensDashboard");
 import BankLensNavbar from "@/components/banklens/banklens-navbar";
 import ConnectBankHero from "@/components/banklens/connect-bank-hero";
 import BalanceCards from "@/components/banklens/balance-cards";
@@ -52,16 +55,19 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
   const [userId, setUserId] = useState<string | null>(null);
 
   const getPublicUserId = useCallback(async (authUserId: string) => {
+    logger.debug("Fetching public user ID", { authUserId });
     const { data } = await supabase
       .from("users")
       .select("id")
       .eq("user_id", authUserId)
       .single();
+    if (!data) logger.warn("Public user record not found", { authUserId });
     return data?.id || null;
   }, [supabase]);
 
   const fetchAccounts = useCallback(async (pubUserId: string) => {
-    const { data } = await supabase
+    logger.debug("Fetching accounts", { pubUserId });
+    const { data, error } = await supabase
       .from("plaid_accounts")
       .select(`
         id, name, official_name, type, subtype,
@@ -71,7 +77,12 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       .eq("user_id", pubUserId)
       .order("created_at", { ascending: true });
 
+    if (error) {
+      logger.error("Failed to fetch accounts", { pubUserId, error: error.message });
+    }
+
     if (data && data.length > 0) {
+      logger.info("Accounts loaded", { pubUserId, count: data.length });
       setAccounts(
         data.map((a) => ({
           ...a,
@@ -80,20 +91,27 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       );
       return true;
     }
+    logger.info("No accounts found for user", { pubUserId });
     return false;
   }, [supabase]);
 
   const fetchTransactions = useCallback(
     async (pubUserId: string, offset = 0, append = false) => {
+      logger.debug("Fetching transactions", { pubUserId, offset, append });
       setTxLoading(!append);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("plaid_transactions")
         .select("id, merchant_name, name, amount, date, category, pending, currency_code")
         .eq("user_id", pubUserId)
         .order("date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
 
+      if (error) {
+        logger.error("Failed to fetch transactions", { pubUserId, offset, error: error.message });
+      }
+
       if (data) {
+        logger.info("Transactions loaded", { pubUserId, count: data.length, offset, append });
         if (append) {
           setTransactions((prev) => [...prev, ...data]);
         } else {
@@ -108,8 +126,12 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
   );
 
   const checkConnection = useCallback(async () => {
+    logger.info("Checking bank connection status");
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      logger.warn("No authenticated user found");
+      return;
+    }
 
     const pubId = await getPublicUserId(user.id);
     if (!pubId) return;
@@ -118,7 +140,10 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
     const hasAccounts = await fetchAccounts(pubId);
     setIsConnected(hasAccounts);
     if (hasAccounts) {
+      logger.info("Bank connected — loading transactions", { pubId });
       await fetchTransactions(pubId, 0, false);
+    } else {
+      logger.info("No bank connected — showing connect CTA");
     }
   }, [supabase, getPublicUserId, fetchAccounts, fetchTransactions]);
 
@@ -127,11 +152,13 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
   }, [checkConnection]);
 
   const handleConnected = useCallback(async () => {
+    logger.info("Bank connection successful — refreshing dashboard");
     setIsConnected(null); // loading state
     await checkConnection();
   }, [checkConnection]);
 
   const handleDisconnect = useCallback(async () => {
+    logger.info("User disconnected bank — clearing state");
     setIsConnected(false);
     setAccounts([]);
     setTransactions([]);
@@ -141,11 +168,13 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
 
   const handleRefresh = useCallback(async () => {
     if (!userId) return;
+    logger.info("Manual balance refresh triggered", { userId });
     await fetchAccounts(userId);
   }, [userId, fetchAccounts]);
 
   const handleLoadMore = useCallback(async () => {
     if (!userId || !hasMore) return;
+    logger.debug("Loading more transactions", { userId, txOffset });
     await fetchTransactions(userId, txOffset, true);
   }, [userId, txOffset, hasMore, fetchTransactions]);
 
