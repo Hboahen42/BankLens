@@ -58,10 +58,11 @@ export default async function Signup(props: {
               <form className="flex flex-col gap-[10px]">
                 {/* Full Name Field */}
                 <div className="flex flex-col gap-[5px] p-1">
-                  <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                  <label htmlFor="full_name" className="font-inter font-normal text-white text-sm leading-5 px-1">
                     Full Name
                   </label>
                   <Input
+                    id="full_name"
                     name="full_name"
                     type="text"
                     placeholder="John Doe"
@@ -73,10 +74,11 @@ export default async function Signup(props: {
 
                 {/* Email Field */}
                 <div className="flex flex-col gap-[5px] p-1">
-                  <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                  <label htmlFor="email" className="font-inter font-normal text-white text-sm leading-5 px-1">
                     Email Address
                   </label>
                   <Input
+                    id="email"
                     name="email"
                     type="email"
                     placeholder="Enter your email"
@@ -88,10 +90,11 @@ export default async function Signup(props: {
 
                 {/* Password Field */}
                 <div className="flex flex-col gap-[5px] p-1">
-                  <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                  <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
                     Password
                   </label>
                   <Input
+                    id="password"
                     type="password"
                     name="password"
                     placeholder="Enter a strong password"

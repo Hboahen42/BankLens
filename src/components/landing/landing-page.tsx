@@ -47,7 +47,7 @@ function HeroSection() {
                 <span className="text-[#1fa8b0] font-serif font-normal">Companion</span>
             </h1>
             <p className="font-dm-sans font-normal text-white/90 text-lg leading-7 mb-10 max-w-xl mx-auto">
-                Take control of your finances with FinWise. Connect your bank accounts, track spending,
+                Take control of your finances with BankLens. Connect your bank accounts, track spending,
                 and gain insights into your financial health all in one place.
             </p>
             <div className="flex items-center justify-center gap-5">

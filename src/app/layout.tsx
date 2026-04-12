@@ -12,7 +12,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "BankLens — Your Smart Financial Companion",
-  description: "Take control of your finances with FinWise. Connect your bank accounts, track spending, and gain insights into your financial health.",
+  description: "Take control of your finances with BankLens. Connect your bank accounts, track spending, and gain insights into your financial health.",
 };
 
 export default function RootLayout({

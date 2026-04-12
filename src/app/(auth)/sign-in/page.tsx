@@ -3,6 +3,7 @@ import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { ArrowUp } from "lucide-react";
 import BackgroundImage from "@/components/landing/BackgroundImage";
 
 
@@ -59,13 +60,14 @@ export default async function SignInPage({ searchParams }: LoginProps) {
             <form className="flex flex-col gap-[10px]">
               {/* Email Field */}
               <div className="flex flex-col gap-[5px] p-1">
-                <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                <label htmlFor="email" className="font-inter font-normal text-white text-sm leading-5 px-1">
                   Email Address
                 </label>
                 <Input
+                  id="email"
                   name="email"
                   type="email"
-                  placeholder="Enter your name"
+                  placeholder="Enter your email"
                   required
                   className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
                   style={{ backgroundColor: "transparent" }}
@@ -74,10 +76,11 @@ export default async function SignInPage({ searchParams }: LoginProps) {
 
               {/* Password Field */}
               <div className="flex flex-col gap-[5px] p-1">
-                <label className="font-inter font-normal text-white text-sm leading-5 px-1">
+                <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
                   Password
                 </label>
                 <Input
+                  id="password"
                   type="password"
                   name="password"
                   placeholder="Enter a strong password"
@@ -101,7 +104,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
                   pendingText="Signing in..."
                   className="w-full bg-white text-black font-inter font-normal text-sm leading-5 py-2 rounded-md hover:bg-white/90 transition-colors"
                 >
-                  Get Started
+                  Sign In
                 </SubmitButton>
               </div>
 
