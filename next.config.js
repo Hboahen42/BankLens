@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-import {withAxiom} from 'next-axiom';
-
 const nextConfig = {
     images: {
         remotePatterns: [
@@ -9,8 +7,8 @@ const nextConfig = {
                 hostname: 'images.unsplash.com',
             },
         ],
-    }
+    },
+    serverExternalPackages: ['pino', 'pino-pretty', '@logtail/pino'],
 };
 
-
-export default withAxiom(nextConfig);
+module.exports = nextConfig;

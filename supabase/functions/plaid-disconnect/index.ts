@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createLogger } from "./logger.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,15 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const logger = createLogger("plaid-disconnect");
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });
   }
 
   const requestId = crypto.randomUUID();
-  logger.info("Request received", { requestId, method: req.method });
+  const log = createLogger("plaid-disconnect", requestId);
+
+  log.info("Disconnect request received");
 
   try {
     const supabase = createClient(
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      logger.warn("Missing authorization header", { requestId });
+      log.warn("Request missing Authorization header");
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -37,14 +37,14 @@ Deno.serve(async (req) => {
     );
 
     if (authError || !user) {
-      logger.warn("Authentication failed", { requestId, error: authError?.message });
+      log.warn("Unauthorized disconnect attempt", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
 
-    logger.info("User authenticated", { requestId, userId: user.id });
+    log.info("User authenticated", { userId: user.id });
 
     // Get user from public.users
     const { data: publicUser } = await supabase
@@ -54,14 +54,14 @@ Deno.serve(async (req) => {
       .single();
 
     if (!publicUser) {
-      logger.error("Public user record not found", { requestId, userId: user.id });
+      log.warn("Public user record not found", { userId: user.id });
       return new Response(JSON.stringify({ error: "User not found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 404,
       });
     }
 
-    logger.debug("Deleting plaid_connections for user", { requestId, publicUserId: publicUser.id });
+    log.info("Deleting Plaid connections", { userId: user.id, publicUserId: publicUser.id });
 
     const { error: deleteError, count } = await supabase
       .from("plaid_connections")
@@ -69,21 +69,22 @@ Deno.serve(async (req) => {
       .eq("user_id", publicUser.id);
 
     if (deleteError) {
-      logger.error("Failed to delete connections", { requestId, publicUserId: publicUser.id, error: deleteError.message });
       throw new Error(deleteError.message);
     }
 
-    logger.info("Bank disconnected successfully", { requestId, userId: user.id, connectionsDeleted: count ?? 0 });
+    log.info("Bank disconnected successfully", { userId: user.id, deletedCount: count });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    logger.error("Unhandled exception", { requestId, error: error.message, stack: error.stack });
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const stack = error instanceof Error ? error.stack : undefined;
+    log.error("Unhandled exception during disconnect", { error: message, stack });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
+      status: 500,
     });
   }
 });

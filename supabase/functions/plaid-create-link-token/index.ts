@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createLogger } from "./logger.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 const PLAID_BASE_URL = "https://sandbox.plaid.com";
-const logger = createLogger("plaid-create-link-token");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -16,7 +15,9 @@ Deno.serve(async (req) => {
   }
 
   const requestId = crypto.randomUUID();
-  logger.info("Request received", { requestId, method: req.method });
+  const log = createLogger("plaid-create-link-token", requestId);
+
+  log.info("Link token request received");
 
   try {
     const supabase = createClient(
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      logger.warn("Missing authorization header", { requestId });
+      log.warn("Request missing Authorization header");
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -38,20 +39,20 @@ Deno.serve(async (req) => {
     );
 
     if (authError || !user) {
-      logger.warn("Authentication failed", { requestId, error: authError?.message });
+      log.warn("Unauthorized request", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
 
-    logger.info("User authenticated", { requestId, userId: user.id });
+    log.info("User authenticated", { userId: user.id });
 
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
     const PLAID_SECRET = Deno.env.get("PLAID_SECRET");
 
     if (!PLAID_CLIENT_ID || !PLAID_SECRET) {
-      logger.warn("Plaid credentials not configured — returning mock link token", { requestId, userId: user.id });
+      log.info("Plaid credentials not configured — returning mock link token", { userId: user.id });
       return new Response(
         JSON.stringify({
           link_token: "mock-link-token-" + Date.now(),
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    logger.debug("Calling Plaid /link/token/create", { requestId, userId: user.id });
+    log.info("Requesting link token from Plaid", { userId: user.id });
 
     const response = await fetch(`${PLAID_BASE_URL}/link/token/create`, {
       method: "POST",
@@ -78,27 +79,27 @@ Deno.serve(async (req) => {
         products: ["transactions"],
         country_codes: ["US"],
         language: "en",
+        webhook: `${Deno.env.get("SUPABASE_URL")}/functions/v1/plaid-webhook`,
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      logger.error("Plaid API error", { requestId, status: response.status, plaidError: data.error_code });
+      log.error("Plaid link token creation failed", { status: response.status, plaidError: data });
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: response.status,
       });
     }
 
-    logger.info("Link token created successfully", { requestId, userId: user.id, expiration: data.expiration });
-
+    log.info("Link token created successfully", { userId: user.id });
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    logger.error("Unhandled exception", { requestId, error: error.message, stack: error.stack });
+    log.error("Unhandled exception", { error: error.message });
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,

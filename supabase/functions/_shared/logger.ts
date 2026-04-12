@@ -1,34 +1,38 @@
-export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
+/**
+ * Lightweight structured logger for Supabase Edge Functions (Deno).
+ * Outputs JSON lines — Supabase captures these in the function logs dashboard.
+ */
 
-export interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  function: string;
-  message: string;
-  data?: Record<string, unknown>;
+type LogLevel = "debug" | "info" | "warn" | "error";
+
+interface LogMeta {
+  [key: string]: unknown;
 }
 
-export function createLogger(fnName: string) {
-  function log(level: LogLevel, message: string, data?: Record<string, unknown>) {
-    const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      function: fnName,
-      message,
-      ...(data ? { data } : {}),
-    };
-    const output = JSON.stringify(entry);
-    if (level === "ERROR" || level === "WARN") {
-      console.error(output);
-    } else {
-      console.log(output);
-    }
+function emit(level: LogLevel, module: string, requestId: string | undefined, msg: string, meta?: LogMeta) {
+  const entry = {
+    level,
+    time: new Date().toISOString(),
+    module,
+    requestId,
+    msg,
+    ...meta,
+  };
+  const line = JSON.stringify(entry);
+  if (level === "error") {
+    console.error(line);
+  } else if (level === "warn") {
+    console.warn(line);
+  } else {
+    console.log(line);
   }
+}
 
+export function createLogger(module: string, requestId?: string) {
   return {
-    debug: (message: string, data?: Record<string, unknown>) => log("DEBUG", message, data),
-    info:  (message: string, data?: Record<string, unknown>) => log("INFO",  message, data),
-    warn:  (message: string, data?: Record<string, unknown>) => log("WARN",  message, data),
-    error: (message: string, data?: Record<string, unknown>) => log("ERROR", message, data),
+    debug: (msg: string, meta?: LogMeta) => emit("debug", module, requestId, msg, meta),
+    info:  (msg: string, meta?: LogMeta) => emit("info",  module, requestId, msg, meta),
+    warn:  (msg: string, meta?: LogMeta) => emit("warn",  module, requestId, msg, meta),
+    error: (msg: string, meta?: LogMeta) => emit("error", module, requestId, msg, meta),
   };
 }

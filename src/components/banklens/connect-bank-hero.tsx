@@ -15,12 +15,14 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
 
   const handleConnect = async () => {
     setLoading(true);
+    console.info("[connect-bank] Bank connection initiated");
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       // Create link token
+      console.info("[connect-bank] Requesting Plaid link token");
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-create-link-token`,
         {
@@ -36,6 +38,7 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
 
       if (data.mock) {
         // Mock flow: skip Plaid UI, exchange mock token directly
+        console.info("[connect-bank] Mock flow detected — exchanging mock token");
         const exchangeRes = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-exchange-token`,
           {
@@ -49,17 +52,21 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
         );
         const exchangeData = await exchangeRes.json();
         if (exchangeData.success) {
+          console.info("[connect-bank] Mock bank connected successfully");
           toast.success("Bank connected successfully!");
           onConnected();
         } else {
+          console.error("[connect-bank] Mock exchange failed", exchangeData.error);
           throw new Error(exchangeData.error || "Exchange failed");
         }
       } else {
         // Real Plaid Link flow
+        console.info("[connect-bank] Opening Plaid Link UI");
         // @ts-ignore
         const { open } = window.Plaid?.create({
           token: data.link_token,
           onSuccess: async (public_token: string) => {
+            console.info("[connect-bank] Plaid Link completed — exchanging public token");
             const exchangeRes = await fetch(
               `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-exchange-token`,
               {
@@ -73,14 +80,17 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
             );
             const exchangeData = await exchangeRes.json();
             if (exchangeData.success) {
+              console.info("[connect-bank] Bank connected successfully");
               toast.success("Bank connected successfully!");
               onConnected();
             } else {
+              console.error("[connect-bank] Token exchange failed", exchangeData.error);
               throw new Error(exchangeData.error);
             }
             setLoading(false);
           },
           onExit: () => {
+            console.info("[connect-bank] User exited Plaid Link");
             setLoading(false);
             toast.error("Bank connection cancelled");
           },
@@ -89,6 +99,7 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Connection failed";
+      console.error("[connect-bank] Connection error", message);
       toast.error(message);
       setLoading(false);
     }

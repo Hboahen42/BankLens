@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createLogger } from "./logger.ts";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 const PLAID_BASE_URL = "https://sandbox.plaid.com";
-const logger = createLogger("plaid-exchange-token");
 
 const MOCK_INSTITUTIONS = [
   { id: "ins_1", name: "Chase", color: "#117ACA" },
@@ -59,7 +58,9 @@ Deno.serve(async (req) => {
   }
 
   const requestId = crypto.randomUUID();
-  logger.info("Request received", { requestId, method: req.method });
+  const log = createLogger("plaid-exchange-token", requestId);
+
+  log.info("Token exchange request received");
 
   try {
     const supabase = createClient(
@@ -69,7 +70,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      logger.warn("Missing authorization header", { requestId });
+      log.warn("Request missing Authorization header");
       return new Response(JSON.stringify({ error: "No authorization header" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -81,17 +82,16 @@ Deno.serve(async (req) => {
     );
 
     if (authError || !user) {
-      logger.warn("Authentication failed", { requestId, error: authError?.message });
+      log.warn("Unauthorized token exchange attempt", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
       });
     }
 
-    logger.info("User authenticated", { requestId, userId: user.id });
+    log.info("User authenticated", { userId: user.id });
 
     const { public_token } = await req.json();
-    logger.debug("Received public_token", { requestId, isMock: public_token?.startsWith("mock-") });
 
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
     const PLAID_SECRET = Deno.env.get("PLAID_SECRET");
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (!publicUser) {
-      logger.error("Public user record not found", { requestId, userId: user.id });
+      log.warn("Public user record not found", { userId: user.id });
       return new Response(JSON.stringify({ error: "User not found" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 404,
@@ -116,18 +116,18 @@ Deno.serve(async (req) => {
     let institution: { name: string; institution_id: string; color?: string };
     let accounts: typeof MOCK_ACCOUNTS;
     let transactions: typeof MOCK_TRANSACTIONS;
+    let nextCursor: string | null = null;
 
     if (!PLAID_CLIENT_ID || !PLAID_SECRET || public_token.startsWith("mock-")) {
-      logger.warn("Using mock data — Plaid credentials absent or mock token", { requestId, userId: user.id });
+      log.info("Using mock Plaid data", { userId: user.id });
       accessToken = "mock-access-token-" + Date.now();
       itemId = "mock-item-" + Date.now();
       const mockInst = MOCK_INSTITUTIONS[0];
       institution = { name: mockInst.name, institution_id: mockInst.id, color: mockInst.color };
       accounts = MOCK_ACCOUNTS;
       transactions = MOCK_TRANSACTIONS;
-      logger.info("Mock data prepared", { requestId, institution: institution.name, accountCount: accounts.length, transactionCount: transactions.length });
     } else {
-      logger.debug("Exchanging public token with Plaid", { requestId, userId: user.id });
+      log.info("Exchanging public token with Plaid", { userId: user.id });
       const exchangeResp = await fetch(`${PLAID_BASE_URL}/item/public_token/exchange`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,14 +139,13 @@ Deno.serve(async (req) => {
       });
       const exchangeData = await exchangeResp.json();
       if (!exchangeResp.ok) {
-        logger.error("Plaid token exchange failed", { requestId, status: exchangeResp.status, plaidError: exchangeData.error_code });
+        log.error("Plaid token exchange failed", { status: exchangeResp.status, plaidError: exchangeData });
         throw new Error(exchangeData.error_message || "Token exchange failed");
       }
       accessToken = exchangeData.access_token;
       itemId = exchangeData.item_id;
-      logger.info("Token exchange successful", { requestId, itemId });
+      log.info("Token exchanged with Plaid", { itemId });
 
-      logger.debug("Fetching institution info", { requestId });
       const itemResp = await fetch(`${PLAID_BASE_URL}/item/get`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -163,13 +162,10 @@ Deno.serve(async (req) => {
         });
         const instData = await instResp.json();
         institution = { name: instData.institution?.name || "Unknown Bank", institution_id: institutionId };
-        logger.info("Institution resolved", { requestId, institutionName: institution.name });
       } else {
-        logger.warn("Institution ID not found in item data", { requestId });
         institution = { name: "Unknown Bank", institution_id: "" };
       }
 
-      logger.debug("Fetching account balances", { requestId });
       const accountsResp = await fetch(`${PLAID_BASE_URL}/accounts/balance/get`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -177,28 +173,36 @@ Deno.serve(async (req) => {
       });
       const accountsData = await accountsResp.json();
       accounts = accountsData.accounts || [];
-      logger.info("Accounts fetched", { requestId, accountCount: accounts.length });
 
-      logger.debug("Fetching transactions (last 30 days)", { requestId });
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const transactionsResp = await fetch(`${PLAID_BASE_URL}/transactions/get`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_id: PLAID_CLIENT_ID,
-          secret: PLAID_SECRET,
-          access_token: accessToken,
-          start_date: thirtyDaysAgo.toISOString().split("T")[0],
-          end_date: now.toISOString().split("T")[0],
-        }),
-      });
-      const txData = await transactionsResp.json();
-      transactions = txData.transactions || [];
-      logger.info("Transactions fetched", { requestId, transactionCount: transactions.length });
+      let added: any[] = [];
+      let hasMore = true;
+      let cursor: string | null = null;
+
+      while (hasMore) {
+        const syncResp = await fetch(`${PLAID_BASE_URL}/transactions/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_id: PLAID_CLIENT_ID,
+            secret: PLAID_SECRET,
+            access_token: accessToken,
+            cursor: cursor,
+          }),
+        });
+        const syncData = await syncResp.json();
+        if (!syncResp.ok) {
+          break;
+        }
+        added = added.concat(syncData.added);
+        hasMore = syncData.has_more;
+        cursor = syncData.next_cursor;
+      }
+      transactions = added;
+      nextCursor = cursor;
     }
 
-    logger.debug("Saving connection to database", { requestId, institutionName: institution.name });
+    log.info("Saving Plaid connection to database", { userId: user.id, institution: institution.name });
+
     const { data: connection } = await supabase
       .from("plaid_connections")
       .insert({
@@ -208,18 +212,21 @@ Deno.serve(async (req) => {
         institution_id: institution.institution_id,
         institution_name: institution.name,
         institution_color: institution.color || "#00D4AA",
+        next_cursor: nextCursor,
       })
       .select()
       .single();
 
     if (!connection) {
-      logger.error("Failed to save connection record", { requestId, userId: user.id });
       throw new Error("Failed to save connection");
     }
 
-    logger.info("Connection saved", { requestId, connectionId: connection.id });
+    log.info("Connection saved", { connectionId: connection.id, institution: institution.name });
 
     // Save accounts
+    let accountsSaved = 0;
+    let txSavedTotal = 0;
+
     for (const acc of accounts) {
       const { data: savedAccount, error: accError } = await supabase
         .from("plaid_accounts")
@@ -239,11 +246,11 @@ Deno.serve(async (req) => {
         .single();
 
       if (accError) {
-        logger.warn("Failed to save account", { requestId, accountId: acc.account_id, error: accError.message });
+        log.error("Failed to save account", { accountId: acc.account_id, error: accError.message });
       }
 
       if (savedAccount) {
-        logger.debug("Account saved — persisting transactions", { requestId, accountId: savedAccount.id });
+        accountsSaved++;
         const accTransactions = transactions.slice(0, 15);
         let txSaved = 0;
         for (const tx of accTransactions) {
@@ -258,25 +265,31 @@ Deno.serve(async (req) => {
             date: tx.date,
             category: categoryStr,
             pending: tx.pending || false,
+            pending_transaction_id: tx.pending_transaction_id,
           });
           if (txError) {
-            logger.warn("Failed to save transaction", { requestId, transactionId: tx.transaction_id, error: txError.message });
+            log.warn("Failed to save transaction", { transactionId: tx.transaction_id, error: txError.message });
           } else {
             txSaved++;
           }
         }
-        logger.info("Transactions persisted for account", { requestId, accountId: savedAccount.id, saved: txSaved, total: accTransactions.length });
+        txSavedTotal += txSaved;
       }
     }
 
-    logger.info("Bank connection flow completed successfully", { requestId, userId: user.id, connectionId: connection.id });
+    log.info("Bank connected successfully", {
+      userId: user.id,
+      institution: institution.name,
+      accountsSaved,
+      transactionsSaved: txSavedTotal,
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    logger.error("Unhandled exception", { requestId, error: error.message, stack: error.stack });
+    log.error("Unhandled exception during token exchange", { error: error.message });
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
