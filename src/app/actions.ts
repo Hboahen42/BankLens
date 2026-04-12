@@ -7,6 +7,7 @@ import { createClient } from "../../supabase/server";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("auth");
+
 const maskEmail = (email?: string | null) => {
   if (!email) return undefined;
 
@@ -16,6 +17,16 @@ const maskEmail = (email?: string | null) => {
   }
   return `${email.slice(0, 1)}*****${email.slice(atIndex)}`;
 };
+
+const toSafeErrorMeta = (error: unknown) => {
+  if (!error || typeof error !== "object") return undefined;
+  const e = error as { name?: string; code?: string | number; status?: number };
+  return {
+    name: e.name,
+    code: e.code,
+    status: e.status,
+  }
+}
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
@@ -47,7 +58,7 @@ export const signUpAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.error({ email: maskEmail(email), error: error.message }, "Sign-up failed");
+    log.error({ email: maskEmail(email), error: toSafeErrorMeta(error) }, "Sign-up failed");
     return encodedRedirect("error", "/sign-up", error.message);
   }
 
@@ -67,7 +78,7 @@ export const signUpAction = async (formData: FormData) => {
         });
 
       if (updateError) {
-        log.error({ userId: user.id, error: updateError.message }, "Failed to insert user profile");
+        log.error({ userId: user.id, error: toSafeErrorMeta(error) }, "Failed to insert user profile");
         return encodedRedirect(
             "error",
             "/sign-up",
@@ -105,7 +116,7 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.warn({ email: maskEmail(email), error: error.message }, "Sign-in failed");
+    log.error({ email: maskEmail(email), error: toSafeErrorMeta(error) }, "Sign-in failed");
     return encodedRedirect("error", "/sign-in", error.message);
   }
 
@@ -131,7 +142,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.error({ email: maskEmail(email) , error: error.message }, "Password reset email failed");
+    log.error({ email: maskEmail(email) , error: toSafeErrorMeta(error) }, "Password reset email failed");
     return encodedRedirect(
       "error",
       "/forgot-password",
@@ -181,7 +192,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   });
 
   if (error) {
-    log.error({ error: error.message }, "Password update failed");
+    log.error({ error: toSafeErrorMeta(error) }, "Password update failed");
     return encodedRedirect(
       "error",
       "/protected/reset-password",
