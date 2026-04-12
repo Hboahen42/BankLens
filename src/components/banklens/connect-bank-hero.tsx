@@ -19,7 +19,6 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Session:", session?.access_token);
 
       // Create link token
       const res = await fetch(
@@ -34,7 +33,6 @@ export default function ConnectBankHero({ onConnected }: ConnectBankHeroProps) {
       );
 
       const data = await res.json();
-      console.log("Link token response:", data);
 
       if (data.mock) {
         // Mock flow: skip Plaid UI, exchange mock token directly
