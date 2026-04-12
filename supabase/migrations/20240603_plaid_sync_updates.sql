@@ -19,10 +19,11 @@ BEGIN
 END $$;
 
 -- Create an index on transaction_id for faster lookups during sync
--- Cleanup duplicates before creating unique index
+-- Cleanup duplicates before creating unique index, keeping the newest record
 DELETE FROM public.plaid_transactions t1
 USING public.plaid_transactions t2
-WHERE t1.id < t2.id 
-  AND t1.transaction_id = t2.transaction_id;
+WHERE t1.transaction_id = t2.transaction_id
+  AND (t1.created_at < t2.created_at
+       OR (t1.created_at = t2.created_at AND t1.id < t2.id));
 
 CREATE UNIQUE INDEX IF NOT EXISTS plaid_transactions_transaction_id_idx ON public.plaid_transactions (transaction_id);

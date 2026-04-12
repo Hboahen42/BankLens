@@ -6,7 +6,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PLAID_BASE_URL = "https://sandbox.plaid.com";
+// Map Plaid environment variable to the correct base URL
+const plaidEnv = Deno.env.get("PLAID_ENV") || Deno.env.get("PLAID_ENVIRONMENT") || "sandbox";
+const PLAID_BASE_URL = (() => {
+  switch (plaidEnv.toLowerCase()) {
+    case "production":
+      return "https://production.plaid.com";
+    case "development":
+      return "https://development.plaid.com";
+    case "sandbox":
+    default:
+      return "https://sandbox.plaid.com";
+  }
+})();
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -81,10 +93,19 @@ Deno.serve(async (req) => {
     const PLAID_CLIENT_ID = Deno.env.get("PLAID_CLIENT_ID");
     const PLAID_SECRET = Deno.env.get("PLAID_SECRET");
 
-    if (!PLAID_CLIENT_ID || !PLAID_SECRET || connection.access_token.startsWith("mock-")) {
+    // Handle mock tokens separately
+    if (connection.access_token.startsWith("mock-")) {
       return new Response(JSON.stringify({ success: true, message: "Mock sync completed (no real Plaid credentials)" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
+      });
+    }
+
+    // If not a mock token, Plaid credentials are required
+    if (!PLAID_CLIENT_ID || !PLAID_SECRET) {
+      return new Response(JSON.stringify({ error: "Configuration error: PLAID_CLIENT_ID and PLAID_SECRET are required for non-mock tokens" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
       });
     }
 
@@ -121,10 +142,17 @@ Deno.serve(async (req) => {
 
 
     // Get accounts for this connection to map Plaid account_id to our internal uuid
-    const { data: accounts } = await supabase
+    const { data: accounts, error: accountsError } = await supabase
       .from("plaid_accounts")
       .select("id, account_id")
       .eq("connection_id", connection_id);
+
+    if (accountsError) {
+      return new Response(JSON.stringify({ success: false, error: `Failed to fetch accounts: ${accountsError.message}` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
 
     const accountMap = new Map(accounts?.map(a => [a.account_id, a.id]));
 
@@ -134,7 +162,7 @@ Deno.serve(async (req) => {
       if (!internalAccountId) continue;
 
       const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");
-      await supabase.from("plaid_transactions").upsert({
+      const { error: upsertError } = await supabase.from("plaid_transactions").upsert({
         account_id: internalAccountId,
         user_id: userId,
         transaction_id: tx.transaction_id,
@@ -148,6 +176,13 @@ Deno.serve(async (req) => {
         currency_code: tx.iso_currency_code || "USD",
         updated_at: new Date().toISOString(),
       }, { onConflict: "transaction_id" });
+
+      if (upsertError) {
+        return new Response(JSON.stringify({ success: false, error: `Failed to upsert transaction ${tx.transaction_id}: ${upsertError.message}` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
     }
 
     // 2. Handle Modified
@@ -156,7 +191,7 @@ Deno.serve(async (req) => {
       if (!internalAccountId) continue;
 
       const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");
-      await supabase.from("plaid_transactions").update({
+      const { error: updateError } = await supabase.from("plaid_transactions").update({
         merchant_name: tx.merchant_name || tx.name,
         name: tx.name,
         amount: tx.amount,
@@ -166,18 +201,39 @@ Deno.serve(async (req) => {
         pending_transaction_id: tx.pending_transaction_id,
         updated_at: new Date().toISOString(),
       }).eq("transaction_id", tx.transaction_id);
+
+      if (updateError) {
+        return new Response(JSON.stringify({ success: false, error: `Failed to update transaction ${tx.transaction_id}: ${updateError.message}` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
     }
 
     // 3. Handle Removed
     for (const tx of removed) {
-      await supabase.from("plaid_transactions").delete().eq("transaction_id", tx.transaction_id);
+      const { error: deleteError } = await supabase.from("plaid_transactions").delete().eq("transaction_id", tx.transaction_id);
+
+      if (deleteError) {
+        return new Response(JSON.stringify({ success: false, error: `Failed to delete transaction ${tx.transaction_id}: ${deleteError.message}` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
     }
 
     // Update cursor in database
-    await supabase
+    const { error: cursorUpdateError } = await supabase
       .from("plaid_connections")
       .update({ next_cursor: cursor, updated_at: new Date().toISOString() })
       .eq("id", connection_id);
+
+    if (cursorUpdateError) {
+      return new Response(JSON.stringify({ success: false, error: `Failed to update cursor: ${cursorUpdateError.message}` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
 
     return new Response(JSON.stringify({
       success: true,
