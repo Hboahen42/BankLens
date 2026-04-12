@@ -7,9 +7,15 @@ import { createClient } from "../../supabase/server";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("auth");
-const maskEmail = (email: string) =>
-email ? email.replace(/(^.).*(@.*$)/, "$1*****$2") : undefined;
+const maskEmail = (email?: string | null) => {
+  if (!email) return undefined;
 
+  const atIndex = email.indexOf("@");
+  if (atIndex <= 1) {
+    return `${email.slice(0, 1)}*****`;
+  }
+  return `${email.slice(0, 1)}*****${email.slice(atIndex)}`;
+};
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
   const password = formData.get("password")?.toString();
@@ -62,9 +68,19 @@ export const signUpAction = async (formData: FormData) => {
 
       if (updateError) {
         log.error({ userId: user.id, error: updateError.message }, "Failed to insert user profile");
+        return encodedRedirect(
+            "error",
+            "/sign-up",
+            "Account created, but we could not finish setting up your profile. Please try again."
+        );
       }
     } catch (err) {
       log.error({ userId: user.id, err }, "Exception inserting user profile");
+      return encodedRedirect(
+          "error",
+          "/sign-up",
+          "Account created, but we could not finish setting up your profile. Please try again."
+      );
     }
   }
 
@@ -144,7 +160,7 @@ export const resetPasswordAction = async (formData: FormData) => {
 
   if (!password || !confirmPassword) {
     log.warn("Password reset submitted with missing fields");
-    encodedRedirect(
+    return encodedRedirect(
       "error",
       "/protected/reset-password",
       "Password and confirm password are required",
@@ -153,9 +169,9 @@ export const resetPasswordAction = async (formData: FormData) => {
 
   if (password !== confirmPassword) {
     log.warn("Password reset failed: passwords do not match");
-    encodedRedirect(
+    return encodedRedirect(
       "error",
-      "/dashboard/reset-password",
+      "/protected/reset-password",
       "Passwords do not match",
     );
   }
@@ -166,15 +182,15 @@ export const resetPasswordAction = async (formData: FormData) => {
 
   if (error) {
     log.error({ error: error.message }, "Password update failed");
-    encodedRedirect(
+    return encodedRedirect(
       "error",
-      "/dashboard/reset-password",
+      "/protected/reset-password",
       "Password update failed",
     );
   }
 
   log.info("Password updated successfully");
-  encodedRedirect("success", "/protected/reset-password", "Password updated");
+  return encodedRedirect("success", "/protected/reset-password", "Password updated");
 };
 
 export const signOutAction = async () => {
