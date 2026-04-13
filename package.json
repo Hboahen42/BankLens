@@ -66,6 +66,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/node": "^20",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
@@ -78,5 +79,6 @@
   "overrides": {
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3"
-  }
+  },
+  "name": "/app"
 }
