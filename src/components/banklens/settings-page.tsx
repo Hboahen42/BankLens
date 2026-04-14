@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 interface SettingsPageProps {
-  userEmail?: string;
+  userEmail: string;
 }
 
 interface SettingsSection {
@@ -110,7 +110,7 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
   };
 
   const handleChangePassword = async () => {
-    const { error } = await supabase.auth.resetPasswordForEmail(userEmail || "", {
+    const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
       redirectTo: `${window.location.origin}/dashboard/reset-password`,
     });
     if (error) toast.error("Failed to send reset email");

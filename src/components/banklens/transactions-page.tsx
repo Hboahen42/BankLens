@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "../../../supabase/client";
 import AppShell from "@/components/banklens/app-shell";
 import { Toaster } from "@/components/ui/sonner";
-import { Search, ChevronDown, Calendar, CheckCircle2, CreditCard, DollarSign, X } from "lucide-react";
+import { Search, ChevronDown, Calendar, CheckCircle2, CreditCard, DollarSign } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +56,7 @@ const CATEGORIES = [
   "Home",
   "Personal Care",
   "Services",
+  "Government",
   "Income",
   "Transfer",
   "Loan",
@@ -73,6 +74,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Home: "#F59E0B",
   "Personal Care": "#6366F1",
   Services: "#10B981",
+  Government: "#6B7280",
   Income: "#10B981",
   Transfer: "#3B82F6",
   Loan: "#F43F5E",
@@ -135,9 +137,34 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
 
     console.log("Current pubId:", pubId, "Filters applied - Categories:", selectedCategories, "Accounts:", selectedAccounts);
 
-    // 2. Categories
-    if (selectedCategories.length > 0) {
-      query = query.in("category", selectedCategories);
+    if (search || amountFilter.type !== "any") {
+      const orConditions = [];
+
+      if (search) {
+        orConditions.push(`and(name.ilike.%${search}%,merchant_name.ilike.%${search}%)`);
+      }
+
+      if (amountFilter.type !== "any") {
+        const val = parseFloat(amountFilter.value);
+        if (!isNaN(val)) {
+          if (amountFilter.type === "exact") {
+            orConditions.push(`and(amount.eq.${val},amount.eq.${-val})`);
+          } else if (amountFilter.type === "gt") {
+            orConditions.push(`and(amount.gt.${val},amount.lt.${-val})`);
+          } else if (amountFilter.type === "lt") {
+            orConditions.push(`and(amount.lt.${val},amount.gt.${-val})`);
+          } else if (amountFilter.type === "between") {
+            const toVal = parseFloat(amountFilter.toValue);
+            if (!isNaN(toVal)) {
+              orConditions.push(`and(amount.gte.${val},amount.lte.${toVal}),and(amount.lte.${-val},amount.gte.${-toVal})`);
+            }
+          }
+        }
+      }
+
+      if (orConditions.length > 0) {
+        query = query.or(orConditions.join(","));
+      }
     }
 
     // 3. Accounts
@@ -168,25 +195,6 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
         query = query.gte("date", startOfLastMonth.toISOString().split("T")[0])
                      .lte("date", endOfLastMonth.toISOString().split("T")[0]);
-      }
-    }
-
-    // 5. Amount
-    if (amountFilter.type !== "any") {
-      const val = parseFloat(amountFilter.value);
-      if (!isNaN(val)) {
-        if (amountFilter.type === "exact") {
-          query = query.or(`amount.eq.${val},amount.eq.${-val}`);
-        } else if (amountFilter.type === "gt") {
-          query = query.or(`amount.gt.${val},amount.lt.${-val}`);
-        } else if (amountFilter.type === "lt") {
-          query = query.or(`amount.lt.${val},amount.gt.${-val}`);
-        } else if (amountFilter.type === "between") {
-          const toVal = parseFloat(amountFilter.toValue);
-          if (!isNaN(toVal)) {
-            query = query.or(`and(amount.gte.${val},amount.lte.${toVal}),and(amount.lte.${-val},amount.gte.${-toVal})`);
-          }
-        }
       }
     }
 
@@ -224,6 +232,7 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
     supabase.auth.getUser().then(({ data: { user }, error: authError }) => {
       if (authError) {
         console.error("Auth error getting user:", authError);
+        setLoading(false);
         return;
       }
       console.log("Auth user:", user?.id, "email:", user?.email);
@@ -235,10 +244,12 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
             fetchAccounts(pubId);
           } else {
             console.error("Could not find public userId for auth user:", user.id);
+            setLoading(false);
           }
         });
       } else {
         console.log("No auth user found");
+        setLoading(false);
       }
     });
   }, [supabase, getPublicUserId, fetchAccounts]);
@@ -557,8 +568,7 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
                         onClick={clearAllFilters}
                         className="h-12 text-s rounded-full font-medium text-black bg-white hover:bg-[#00D4AA] flex-1 sm:flex-initial"
                     >
-                      <X size={14} />
-                      Clear All
+                      Clear filters
                     </Button>
                 )}
               </div>

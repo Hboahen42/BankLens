@@ -152,20 +152,30 @@ export default function SubscriptionsPage({ userEmail }: SubscriptionsPageProps)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: pubUser } = await supabase.from("users").select("id").eq("user_id", user.id).single();
-      if (!pubUser) { setLoading(false); return; }
-      const { data } = await supabase
-        .from("plaid_transactions")
-        .select("id, merchant_name, name, amount, date, category")
-        .eq("user_id", pubUser.id)
-        .order("date", { ascending: false })
-        .limit(500);
-      if (data) setTransactions(data);
-      setLoading(false);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+            const { data: pubUser } = await supabase.from("users").select("id").eq("user_id", user.id).single();
+        if (!pubUser) return;
+
+            const { data } = await supabase
+          .from("plaid_transactions")
+          .select("id, merchant_name, name, amount, date, category")
+          .eq("user_id", pubUser.id)
+          .order("date", { ascending: false })
+          .limit(500);
+
+            if (!cancelled && data) setTransactions(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
+    return () => {
+    cancelled = true;
+    };
   }, [supabase]);
 
   const subscriptions = detectSubscriptions(transactions);
