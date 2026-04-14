@@ -28,6 +28,6 @@ export const getURL = () => {
     url = `${isLocalhost ? "http" : "https"}://${url}`
   }
 
-  // Make sure to include trailing slash
-  return url.endsWith('/') ? url.slice(0, -1) : url;
+  // Ensure no trailing slash
+  return url.endsWith("/") ? url.slice(0, -1) : url;
 }
