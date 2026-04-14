@@ -1,8 +1,9 @@
 {
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_USE_TURBOPACK=0 next build",
+    "build": "set NEXT_USE_TURBOPACK=0 && next build",
     "start": "next start"
   },
   "dependencies": {
@@ -38,6 +39,8 @@
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "@tailwindcss/postcss": "^4.2.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "autoprefixer": "10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

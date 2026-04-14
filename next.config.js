@@ -11,4 +11,4 @@ const nextConfig = {
     serverExternalPackages: ['pino', 'pino-pretty', '@logtail/pino'],
 };
 
-module.exports = nextConfig;
+export default nextConfig;
