@@ -20,6 +20,33 @@ const PLAID_BASE_URL = (() => {
   }
 })();
 
+function formatCategory(category: string): string {
+  // Map Plaid's granular categories to broader UI categories
+  const cat = category.toUpperCase();
+  
+  if (cat.startsWith('FOOD_AND_DRINK')) return 'Food';
+  if (cat.startsWith('TRANSPORTATION')) return 'Transport';
+  if (cat.startsWith('TRAVEL')) return 'Travel';
+  if (cat.startsWith('RENT_AND_UTILITIES')) return 'Utilities';
+  if (cat.startsWith('ENTERTAINMENT')) return 'Entertainment';
+  if (cat.startsWith('MEDICAL')) return 'Health';
+  if (cat.startsWith('GENERAL_MERCHANDISE')) return 'Shopping';
+  if (cat.startsWith('HOME_IMPROVEMENT')) return 'Home';
+  if (cat.startsWith('PERSONAL_CARE')) return 'Personal Care';
+  if (cat.startsWith('GENERAL_SERVICES')) return 'Services';
+  if (cat.startsWith('GOVERNMENT_AND_NON_PROFIT')) return 'Government';
+  if (cat.startsWith('BANK_FEES')) return 'Fees';
+  if (cat.startsWith('INCOME')) return 'Income';
+  if (cat.startsWith('TRANSFER')) return 'Transfer';
+  if (cat.startsWith('LOAN')) return 'Loan';
+  
+  return category
+    .toLowerCase()
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });
@@ -133,6 +160,9 @@ Deno.serve(async (req) => {
           secret: PLAID_SECRET,
           access_token: connection.access_token,
           cursor: cursor,
+          options: {
+            personal_finance_category_version: "v2",
+          },
         }),
       });
 
@@ -170,7 +200,7 @@ Deno.serve(async (req) => {
       const internalAccountId = accountMap.get(tx.account_id);
       if (!internalAccountId) continue;
 
-      const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");
+      const categoryStr = formatCategory(tx.personal_finance_category?.primary || tx.personal_finance_category?.detailed || "Other");
       const { error: upsertError } = await supabase.from("plaid_transactions").upsert({
         account_id: internalAccountId,
         user_id: userId,
@@ -180,6 +210,7 @@ Deno.serve(async (req) => {
         amount: tx.amount,
         date: tx.date,
         category: categoryStr,
+        category_icon: tx.personal_finance_category_icon_url,
         pending: tx.pending || false,
         pending_transaction_id: tx.pending_transaction_id,
         currency_code: tx.iso_currency_code || "USD",
@@ -199,13 +230,14 @@ Deno.serve(async (req) => {
       const internalAccountId = accountMap.get(tx.account_id);
       if (!internalAccountId) continue;
 
-      const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");
+      const categoryStr = formatCategory(tx.personal_finance_category?.primary || tx.personal_finance_category?.detailed || "Other");
       const { error: updateError } = await supabase.from("plaid_transactions").update({
         merchant_name: tx.merchant_name || tx.name,
         name: tx.name,
         amount: tx.amount,
         date: tx.date,
         category: categoryStr,
+        category_icon: tx.personal_finance_category_icon_url,
         pending: tx.pending || false,
         pending_transaction_id: tx.pending_transaction_id,
         updated_at: new Date().toISOString(),

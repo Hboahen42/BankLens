@@ -60,3 +60,6 @@ node_modules
 # logs
 /logs/*.log
 /logs/*.log.*
+
+qodana.yaml
+qodana.sarif.json

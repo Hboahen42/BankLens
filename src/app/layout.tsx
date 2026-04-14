@@ -4,6 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import { TempoInit } from "@/components/tempo-init";
 import { ThemeProvider } from "@/components/theme-provider";
+import React from "react";
 
 const dmSans = DM_Sans({
     variable: "--font-dm-sans",

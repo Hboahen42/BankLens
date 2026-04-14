@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { Button } from './ui/button'
-import { UserCircle, Home } from 'lucide-react'
+import { UserCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function DashboardNavbar() {

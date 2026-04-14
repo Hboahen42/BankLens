@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "../../../supabase/server";
-import BankLensDashboard from "@/components/banklens/banklens-dashboard";
+import DashboardOverview from "@/components/banklens/dashboard-overview";
 
 export default async function Dashboard() {
   const supabase = await createClient();
@@ -13,5 +13,5 @@ export default async function Dashboard() {
     return redirect("/sign-in");
   }
 
-  return <BankLensDashboard userEmail={user.email} />;
+  return <DashboardOverview userEmail={user.email} />;
 }

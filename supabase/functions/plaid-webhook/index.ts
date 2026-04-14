@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders, status: 200 });
   }
 
   const requestId = crypto.randomUUID();
+  const log = createLogger("plaid-webhook", requestId);
+
+  log.info("Webhook received");
 
   try {
     // Verify Plaid webhook signature before processing
@@ -23,7 +26,7 @@ Deno.serve(async (req) => {
       const signature = req.headers.get("Plaid-Verification");
 
       if (!signature) {
-        console.error(`[${requestId}] Missing Plaid-Verification header`);
+        log.warn("Missing Plaid-Verification header");
         return new Response(JSON.stringify({ error: "Unauthorized: Missing signature" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401,
@@ -38,7 +41,7 @@ Deno.serve(async (req) => {
         // Decode JWT header to get kid
         const jwtParts = signature.split('.');
         if (jwtParts.length !== 3) {
-          console.error(`[${requestId}] Invalid JWT format`);
+          log.warn("Invalid JWT format in Plaid-Verification header");
           return new Response(JSON.stringify({ error: "Unauthorized: Invalid JWT format" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
@@ -50,7 +53,7 @@ Deno.serve(async (req) => {
         const kid = header.kid;
 
         if (!kid) {
-          console.error(`[${requestId}] Missing kid in JWT header`);
+          log.warn("Missing kid in JWT header");
           return new Response(JSON.stringify({ error: "Unauthorized: Missing kid" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
@@ -71,6 +74,8 @@ Deno.serve(async (req) => {
           }
         })();
 
+        log.debug("Fetching JWK from Plaid", { kid, plaidEnv });
+
         const jwkResponse = await fetch(`${plaidBaseUrl}/webhook_verification_key/get`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -82,7 +87,7 @@ Deno.serve(async (req) => {
         });
 
         if (!jwkResponse.ok) {
-          console.error(`[${requestId}] Failed to fetch JWK from Plaid`);
+          log.error("Failed to fetch JWK from Plaid", { status: jwkResponse.status });
           return new Response(JSON.stringify({ error: "Unauthorized: Failed to fetch verification key" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
@@ -118,7 +123,7 @@ Deno.serve(async (req) => {
         );
 
         if (!isValidSignature) {
-          console.error(`[${requestId}] Invalid JWT signature`);
+          log.warn("Invalid JWT signature on webhook");
           return new Response(JSON.stringify({ error: "Unauthorized: Invalid signature" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
@@ -129,7 +134,7 @@ Deno.serve(async (req) => {
         const now = Math.floor(Date.now() / 1000);
         const iat = payload.iat;
         if (!iat || Math.abs(now - iat) > 300) {
-          console.error(`[${requestId}] JWT timestamp out of range`);
+          log.warn("JWT timestamp out of range", { iat, now, diff: Math.abs(now - iat) });
           return new Response(JSON.stringify({ error: "Unauthorized: JWT timestamp out of range" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
@@ -143,17 +148,19 @@ Deno.serve(async (req) => {
           .join('');
 
         if (payload.request_body_sha256 !== bodyHashHex) {
-          console.error(`[${requestId}] Body hash mismatch`);
+          log.warn("Webhook body hash mismatch");
           return new Response(JSON.stringify({ error: "Unauthorized: Body hash mismatch" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 401,
           });
         }
 
+        log.info("Webhook signature verified");
+
         // Parse body after verification
         body = JSON.parse(rawBody);
       } catch (verificationError) {
-        console.error(`[${requestId}] JWT verification error:`, verificationError);
+        log.error("JWT verification exception", { error: verificationError instanceof Error ? verificationError.message : String(verificationError) });
         return new Response(JSON.stringify({ error: "Unauthorized: Verification failed" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401,
@@ -165,10 +172,10 @@ Deno.serve(async (req) => {
       const allowInsecure = Deno.env.get("PLAID_WEBHOOK_ALLOW_INSECURE");
 
       if (nodeEnv === "development" || allowInsecure === "true") {
-        console.warn(`[${requestId}] Processing webhook without signature verification (dev mode)`);
+        log.warn("Processing webhook without signature verification (dev/insecure mode)");
         body = await req.json();
       } else {
-        console.error(`[${requestId}] Missing PLAID_WEBHOOK_SECRET and not in development mode`);
+        log.error("PLAID_WEBHOOK_SECRET not configured and not in development mode");
         return new Response(JSON.stringify({ error: "Webhook signature verification required" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401,
@@ -177,6 +184,8 @@ Deno.serve(async (req) => {
     }
 
     const { webhook_type, webhook_code, item_id } = body;
+
+    log.info("Webhook payload parsed", { webhook_type, webhook_code, item_id });
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -192,30 +201,17 @@ Deno.serve(async (req) => {
         .single();
 
       if (connError || !connection) {
+        log.warn("Connection not found for item_id", { item_id });
         return new Response(JSON.stringify({ error: "Connection not found" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 404,
         });
       }
 
-      // Instead of duplicating sync logic, we'll call the existing sync function locally
-      // or just re-implement the sync logic here if we want to avoid HTTP overhead.
-      // For simplicity and directness, we'll trigger the sync.
-      
+      log.info("Triggering transaction sync", { connectionId: connection.id });
+
       const syncFunctionUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/plaid-sync-transactions`;
-      
-      // We need a way to authenticate this call. Since it's internal (Edge Function to Edge Function),
-      // we can't easily use the user's JWT. 
-      // However, the plaid-sync-transactions function currently expects an Auth header.
-      // We'll update plaid-sync-transactions to also accept a service role key or just handle it here.
-      
-      // For now, let's log that we would trigger it. In a real scenario, we'd either:
-      // 1. Refactor sync logic into a shared module.
-      // 2. Make the sync function accept a service role key.
-      
-      // Let's refactor the sync logic into a shared place or just call it.
-      // Given Deno environment constraints, we'll try to invoke it with the service role.
-      
+
       const response = await fetch(syncFunctionUrl, {
         method: "POST",
         headers: {
@@ -227,9 +223,8 @@ Deno.serve(async (req) => {
 
       const syncResult = await response.json();
 
-      // Check if sync was successful
       if (!response.ok || (syncResult && syncResult.error)) {
-        console.error(`[${requestId}] Sync failed:`, syncResult);
+        log.error("Transaction sync failed", { status: response.status, error: syncResult.error });
         return new Response(JSON.stringify({
           error: "Sync failed",
           details: syncResult.error || `HTTP ${response.status}`
@@ -238,6 +233,10 @@ Deno.serve(async (req) => {
           status: response.status || 500,
         });
       }
+
+      log.info("Transaction sync triggered successfully", { connectionId: connection.id });
+    } else {
+      log.debug("Unhandled webhook type/code — acknowledging", { webhook_type, webhook_code });
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -246,6 +245,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    log.error("Unhandled exception", { error: error instanceof Error ? error.message : String(error) });
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
