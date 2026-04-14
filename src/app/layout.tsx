@@ -5,6 +5,9 @@ import Script from "next/script";
 import { TempoInit } from "@/components/tempo-init";
 import { ThemeProvider } from "@/components/theme-provider";
 import React from "react";
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
+
 
 const dmSans = DM_Sans({
     variable: "--font-dm-sans",
@@ -39,6 +42,8 @@ export default function RootLayout({
         >
           {children}
         </ThemeProvider>
+        <SpeedInsights />
+        <Analytics />
         <TempoInit />
       </body>
     </html>

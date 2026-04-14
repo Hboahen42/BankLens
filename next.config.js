@@ -9,7 +9,6 @@ const nextConfig = {
         ],
     },
     serverExternalPackages: ['pino', 'pino-pretty', '@logtail/pino'],
-    allowedDevOrigins: ['192.168.0.143']
 };
 
 export default nextConfig;
