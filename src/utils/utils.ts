@@ -22,7 +22,11 @@ export const getURL = () => {
       "http://localhost:3000/";
 
   // Make sure to include `https://` when not localhost
-  url = url.includes('http') ? url : `https://${url}`;
+  const hasProtocol = url.startsWith("http://") || url.startsWith("https://");
+  if (!hasProtocol) {
+    const isLocalhost = url.startsWith("localhost") || url.startsWith("127.0.0.1");
+    url = `${isLocalhost ? "http" : "https"}://${url}`
+  }
 
   // Make sure to include trailing slash
   return url.endsWith('/') ? url.slice(0, -1) : url;
