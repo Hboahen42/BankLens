@@ -138,7 +138,7 @@ export const forgotPasswordAction = async (formData: FormData) => {
   log.info({ email: maskEmail(email) }, "Password reset requested");
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?redirect_to=/protected/reset-password`,
+    redirectTo: `${origin}/auth/callback?redirect_to=/dashboard/reset-password`,
   });
 
   if (error) {
@@ -173,7 +173,7 @@ export const resetPasswordAction = async (formData: FormData) => {
     log.warn("Password reset submitted with missing fields");
     return encodedRedirect(
       "error",
-      "/protected/reset-password",
+      "/dashboard/reset-password",
       "Password and confirm password are required",
     );
   }
@@ -182,7 +182,7 @@ export const resetPasswordAction = async (formData: FormData) => {
     log.warn("Password reset failed: passwords do not match");
     return encodedRedirect(
       "error",
-      "/protected/reset-password",
+      "/dashboard/reset-password",
       "Passwords do not match",
     );
   }
@@ -195,13 +195,13 @@ export const resetPasswordAction = async (formData: FormData) => {
     log.error({ error: toSafeErrorMeta(error) }, "Password update failed");
     return encodedRedirect(
       "error",
-      "/protected/reset-password",
+      "/dashboard/reset-password",
       "Password update failed",
     );
   }
 
   log.info("Password updated successfully");
-  return encodedRedirect("success", "/protected/reset-password", "Password updated");
+  return encodedRedirect("success", "/dashboard/reset-password", "Password updated");
 };
 
 export const signOutAction = async () => {
