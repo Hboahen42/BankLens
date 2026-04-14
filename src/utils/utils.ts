@@ -14,3 +14,20 @@ export function encodedRedirect(
 ) {
   return redirect(`${path}?${type}=${encodeURIComponent(message)}`);
 }
+
+export const getURL = () => {
+  let url =
+      process?.env?.NEXT_PUBLIC_SITE_URL ??
+      process?.env?.NEXT_PUBLIC_VERCEL_URL ??
+      "http://localhost:3000/";
+
+  // Make sure to include `https://` when not localhost
+  const hasProtocol = url.startsWith("http://") || url.startsWith("https://");
+  if (!hasProtocol) {
+    const isLocalhost = url.startsWith("localhost") || url.startsWith("127.0.0.1");
+    url = `${isLocalhost ? "http" : "https"}://${url}`
+  }
+
+  // Make sure to include trailing slash
+  return url.endsWith('/') ? url.slice(0, -1) : url;
+}
