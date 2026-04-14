@@ -14,6 +14,18 @@ import {
   Unlink,
 } from "lucide-react";
 import { signOutAction } from "@/app/actions";
+import { createClient } from "../../../supabase/client";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SidebarProps {
   userEmail?: string;
@@ -45,12 +57,41 @@ const navItems = [
 ];
 
 export default function Sidebar({ userEmail, isConnected, onDisconnect }: SidebarProps) {
+  const supabase = createClient();
   const [collapsed, setCollapsed] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const pathname = usePathname();
   const initials = userEmail ? userEmail.slice(0, 2).toUpperCase() : "BL";
 
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/plaid-disconnect`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+      if (!res.ok) throw new Error("Disconnect failed");
+      if (onDisconnect) onDisconnect();
+      toast.success("Bank disconnected successfully");
+    } catch {
+      toast.error("Failed to disconnect bank");
+    } finally {
+      setDisconnecting(false);
+      setShowDisconnectModal(false);
+    }
+  };
+
   return (
-    <aside
+    <>
+      <aside
       className="flex flex-col sticky top-0 h-screen transition-all duration-300 z-40 shrink-0"
       style={{
         width: collapsed ? "72px" : "240px",
@@ -152,7 +193,7 @@ export default function Sidebar({ userEmail, isConnected, onDisconnect }: Sideba
         {/* Disconnect */}
         {isConnected && (
           <button
-            onClick={onDisconnect}
+            onClick={() => setShowDisconnectModal(true)}
             className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 w-full"
             style={{ color: "rgba(255,107,107,0.7)" }}
             onMouseEnter={(e) => {
@@ -204,6 +245,55 @@ export default function Sidebar({ userEmail, isConnected, onDisconnect }: Sideba
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
-    </aside>
+      </aside>
+
+      {/* Disconnect Confirmation Modal */}
+      <AlertDialog open={showDisconnectModal} onOpenChange={setShowDisconnectModal}>
+        <AlertDialogContent
+          style={{
+            backgroundColor: "#181C27",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "16px",
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle
+              style={{ fontFamily: "Syne, sans-serif", color: "#ffffff" }}
+            >
+              Disconnect Bank?
+            </AlertDialogTitle>
+            <AlertDialogDescription
+              style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Space Grotesk, sans-serif" }}
+            >
+              This will remove all your connected accounts and transaction history.
+              You can reconnect anytime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              style={{
+                backgroundColor: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.7)",
+                fontFamily: "Space Grotesk, sans-serif",
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={disconnecting}
+              onClick={handleDisconnect}
+              style={{
+                backgroundColor: "#FF6B6B",
+                color: "#fff",
+                fontFamily: "Space Grotesk, sans-serif",
+              }}
+            >
+              {disconnecting ? "Disconnecting…" : "Disconnect"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

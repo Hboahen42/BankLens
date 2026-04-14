@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "../../../supabase/client";
 import AppShell from "@/components/banklens/app-shell";
 import { Toaster } from "@/components/ui/sonner";

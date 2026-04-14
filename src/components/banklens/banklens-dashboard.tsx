@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "../../../supabase/client";
 
-import BankLensNavbar from "@/components/banklens/banklens-navbar";
 import ConnectBankHero from "@/components/banklens/connect-bank-hero";
 import BalanceCards from "@/components/banklens/balance-cards";
 import TransactionPanel from "@/components/banklens/transaction-panel";
@@ -35,13 +34,9 @@ interface Transaction {
   currency_code?: string;
 }
 
-interface BankLensDashboardProps {
-  userEmail?: string;
-}
-
 const PAGE_SIZE = 20;
 
-export default function BankLensDashboard({ userEmail }: BankLensDashboardProps) {
+export default function BankLensDashboard() {
   const supabase = createClient();
 
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -96,7 +91,7 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
       setTxLoading(!append);
       const { data, error } = await supabase
         .from("plaid_transactions")
-        .select("id, merchant_name, name, amount, date, category, pending, currency_code")
+        .select("id, merchant_name, name, amount, date, category, category_icon, pending, currency_code")
         .eq("user_id", pubUserId)
         .order("date", { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
@@ -153,14 +148,6 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
     await checkConnection();
   }, [checkConnection]);
 
-  const handleDisconnect = useCallback(async () => {
-    setIsConnected(false);
-    setAccounts([]);
-    setTransactions([]);
-    setTxOffset(0);
-    setHasMore(false);
-  }, []);
-
   const handleRefresh = useCallback(async () => {
     if (!userId) return;
     await fetchAccounts(userId);
@@ -177,12 +164,6 @@ export default function BankLensDashboard({ userEmail }: BankLensDashboardProps)
         className="banklens-bg min-h-screen"
         style={{ fontFamily: "Space Grotesk, sans-serif" }}
       >
-        <BankLensNavbar
-          userEmail={userEmail}
-          isConnected={!!isConnected}
-          onDisconnect={handleDisconnect}
-        />
-
         <main className="max-w-7xl mx-auto px-6 lg:px-8 py-10 relative z-10">
           {/* Loading state (initial check) */}
           {isConnected === null && (

@@ -4,7 +4,24 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "../../../supabase/client";
 import AppShell from "@/components/banklens/app-shell";
 import { Toaster } from "@/components/ui/sonner";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, Calendar, CheckCircle2, CreditCard, DollarSign, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -16,11 +33,35 @@ interface Transaction {
   amount: number;
   date: string;
   category: string;
+  category_icon?: string;
   pending: boolean;
   currency_code?: string;
+  account_id?: string;
 }
 
-const CATEGORIES = ["All", "Food", "Transport", "Shopping", "Entertainment", "Utilities", "Health", "Other"];
+interface Account {
+  id: string;
+  name: string;
+}
+
+const CATEGORIES = [
+  "All",
+  "Food",
+  "Transport",
+  "Shopping",
+  "Entertainment",
+  "Utilities",
+  "Health",
+  "Travel",
+  "Home",
+  "Personal Care",
+  "Services",
+  "Income",
+  "Transfer",
+  "Loan",
+  "Fees",
+  "Other"
+];
 const CATEGORY_COLORS: Record<string, string> = {
   Food: "#00D4AA",
   Transport: "#7B61FF",
@@ -28,6 +69,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Entertainment: "#FFB347",
   Utilities: "#4FC3F7",
   Health: "#81C784",
+  Travel: "#EC4899",
+  Home: "#F59E0B",
+  "Personal Care": "#6366F1",
+  Services: "#10B981",
+  Income: "#10B981",
+  Transfer: "#3B82F6",
+  Loan: "#F43F5E",
+  Fees: "#EF4444",
   Other: "rgba(255,255,255,0.3)",
 };
 
@@ -41,30 +90,117 @@ interface TransactionsPageProps {
 export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
   const supabase = createClient();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Filter states
+  const [dateFilter, setDateFilter] = useState("all");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [amountFilter, setAmountFilter] = useState<{
+    type: "exact" | "between" | "gt" | "lt" | "any";
+    value: string;
+    toValue: string;
+  }>({ type: "any", value: "", toValue: "" });
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getPublicUserId = useCallback(async (authId: string) => {
-    const { data } = await supabase.from("users").select("id").eq("user_id", authId).single();
+    console.log("Fetching public user ID for authId:", authId);
+    const { data, error } = await supabase.from("users").select("id").eq("user_id", authId).single();
+    if (error) {
+      console.error("Error fetching public user ID:", error);
+    }
     return data?.id || null;
   }, [supabase]);
 
   const fetchTx = useCallback(async (pubId: string, off = 0, append = false) => {
     if (!append) setLoading(true); else setLoadingMore(true);
-    const { data } = await supabase
+    console.log("Fetching transactions for user:", pubId, "offset:", off, "filters:", { search, selectedCategories, selectedAccounts, dateFilter, amountFilter });
+    
+    let query = supabase
       .from("plaid_transactions")
-      .select("id, merchant_name, name, amount, date, category, pending, currency_code")
-      .eq("user_id", pubId)
+      .select("id, merchant_name, name, amount, date, category, category_icon, pending, currency_code, account_id")
+      .eq("user_id", pubId);
+
+    // 1. Search (Search only works on the loaded data for now, but better than nothing)
+    // Actually search is usually best done on server
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,merchant_name.ilike.%${search}%`);
+    }
+
+    console.log("Current pubId:", pubId, "Filters applied - Categories:", selectedCategories, "Accounts:", selectedAccounts);
+
+    // 2. Categories
+    if (selectedCategories.length > 0) {
+      query = query.in("category", selectedCategories);
+    }
+
+    // 3. Accounts
+    if (selectedAccounts.length > 0) {
+      query = query.in("account_id", selectedAccounts);
+    }
+
+    // 4. Dates
+    if (dateFilter !== "all") {
+      const now = new Date();
+      if (dateFilter === "7d") {
+        const d = new Date();
+        d.setDate(now.getDate() - 7);
+        query = query.gte("date", d.toISOString().split("T")[0]);
+      } else if (dateFilter === "30d") {
+        const d = new Date();
+        d.setDate(now.getDate() - 30);
+        query = query.gte("date", d.toISOString().split("T")[0]);
+      } else if (dateFilter === "90d") {
+        const d = new Date();
+        d.setDate(now.getDate() - 90);
+        query = query.gte("date", d.toISOString().split("T")[0]);
+      } else if (dateFilter === "this_month") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        query = query.gte("date", startOfMonth.toISOString().split("T")[0]);
+      } else if (dateFilter === "last_month") {
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        query = query.gte("date", startOfLastMonth.toISOString().split("T")[0])
+                     .lte("date", endOfLastMonth.toISOString().split("T")[0]);
+      }
+    }
+
+    // 5. Amount
+    if (amountFilter.type !== "any") {
+      const val = parseFloat(amountFilter.value);
+      if (!isNaN(val)) {
+        if (amountFilter.type === "exact") {
+          query = query.or(`amount.eq.${val},amount.eq.${-val}`);
+        } else if (amountFilter.type === "gt") {
+          query = query.or(`amount.gt.${val},amount.lt.${-val}`);
+        } else if (amountFilter.type === "lt") {
+          query = query.or(`amount.lt.${val},amount.gt.${-val}`);
+        } else if (amountFilter.type === "between") {
+          const toVal = parseFloat(amountFilter.toValue);
+          if (!isNaN(toVal)) {
+            query = query.or(`and(amount.gte.${val},amount.lte.${toVal}),and(amount.lte.${-val},amount.gte.${-toVal})`);
+          }
+        }
+      }
+    }
+
+    const { data, error } = await query
       .order("date", { ascending: false })
       .range(off, off + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error("Error fetching transactions:", error);
+    }
+    console.log("Fetched data:", data?.length, "records");
+
     if (data) {
+      console.log("Setting transactions state with", data.length, "items. Data sample:", data.slice(0, 2));
       if (append) setTransactions((prev) => [...prev, ...data]);
       else setTransactions(data);
       setHasMore(data.length === PAGE_SIZE);
@@ -72,24 +208,65 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
     }
     setLoading(false);
     setLoadingMore(false);
+  }, [supabase, search, selectedCategories, selectedAccounts, dateFilter, amountFilter]);
+
+  const fetchAccounts = useCallback(async (pubId: string) => {
+    const { data } = await supabase
+      .from("plaid_accounts")
+      .select("id, name")
+      .eq("user_id", pubId);
+    if (data) setAccounts(data);
   }, [supabase]);
 
+  // 1. Get user on mount
   useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const pubId = await getPublicUserId(user.id);
-      if (!pubId) return;
-      setUserId(pubId);
-      await fetchTx(pubId, 0, false);
-    })();
-  }, [supabase, getPublicUserId, fetchTx]);
+    console.log("TransactionsPage mounted, fetching user...");
+    supabase.auth.getUser().then(({ data: { user }, error: authError }) => {
+      if (authError) {
+        console.error("Auth error getting user:", authError);
+        return;
+      }
+      console.log("Auth user:", user?.id, "email:", user?.email);
+      if (user) {
+        getPublicUserId(user.id).then((pubId) => {
+          console.log("Public userId result:", pubId);
+          if (pubId) {
+            setUserId(pubId);
+            fetchAccounts(pubId);
+          } else {
+            console.error("Could not find public userId for auth user:", user.id);
+          }
+        });
+      } else {
+        console.log("No auth user found");
+      }
+    });
+  }, [supabase, getPublicUserId, fetchAccounts]);
+
+  // Re-fetch when filters change
+  useEffect(() => {
+    if (userId) {
+      console.log("userId changed or filters changed, triggering fetchTx. userId:", userId);
+      // Small delay to prevent too many requests when typing in amount/search
+      const t = setTimeout(() => {
+        fetchTx(userId, 0, false);
+      }, 300);
+      return () => clearTimeout(t);
+    } else {
+      console.log("userId is not set yet, cannot fetch transactions. userId type:", typeof userId);
+    }
+  }, [userId, search, dateFilter, selectedCategories, selectedAccounts, amountFilter, fetchTx]);
 
   // Infinite scroll
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    if (!sentinelRef.current) {
+      console.log("Sentinel ref is null");
+      return;
+    }
+    console.log("Setting up intersection observer");
     const obs = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting && hasMore && !loadingMore && userId) {
+        console.log("Sentinel intersecting, fetching more...");
         fetchTx(userId, offset, true);
       }
     }, { threshold: 0.1 });
@@ -100,15 +277,19 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
   // Debounced search
   const handleSearch = (val: string) => {
     setSearch(val);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
   };
 
-  const filtered = transactions.filter((t) => {
-    const matchCat = activeCategory === "All" || (t.category || "Other") === activeCategory;
-    const matchSearch = search === "" ||
-      (t.merchant_name || t.name).toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const filtered = transactions;
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setDateFilter("all");
+    setSelectedCategories([]);
+    setSelectedAccounts([]);
+    setAmountFilter({ type: "any", value: "", toValue: "" });
+  };
+
+  const hasActiveFilters = search !== "" || dateFilter !== "all" || selectedCategories.length > 0 || selectedAccounts.length > 0 || amountFilter.type !== "any";
 
   // Monthly spending chart
   const monthlyMap: Record<string, number> = {};
@@ -130,13 +311,36 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
         <AppShell userEmail={userEmail}>
           <div className="p-8 max-w-[1200px] mx-auto">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold" style={{ fontFamily: "Syne, sans-serif", color: "#fff" }}>
-                Transactions
-              </h1>
-              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>
-                All your spending in one place
-              </p>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-2xl font-bold" style={{ fontFamily: "Syne, sans-serif", color: "#fff" }}>
+                  Transactions
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                  <div className="relative flex-1 w-full">
+                    <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.3)" }} />
+                    <input
+                        type="text"
+                        placeholder="Search…"
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="w-full pl-12 pr-4 py-2.5 rounded-full text-md outline-none"
+                        style={{
+                          backgroundColor: "#181C27",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                          color: "#fff",
+                          fontFamily: "Space Grotesk",
+                        }}
+                    />
+                  </div>
+                </div>
+                <Button className="h-10 px-4 rounded-full text-md font-medium flex items-center border-[rgba(255,255,255,0.08)] bg-[#181C27] hover:bg-[#1E2334] text-[rgba(255,255,255,0.6)] hover:text-white">
+                  Sort by date
+                  <ChevronDown size={14} className="ml-1 opacity-40" />
+                </Button>
+              </div>
             </div>
 
             {/* Monthly bar chart */}
@@ -162,44 +366,205 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
               </div>
             )}
 
-            {/* Search + filters */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-5">
-              <div className="relative flex-1">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(255,255,255,0.3)" }} />
-                <input
-                  type="text"
-                  placeholder="Search merchants…"
-                  value={search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
-                  style={{
-                    backgroundColor: "#181C27",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "#fff",
-                    fontFamily: "Space Grotesk",
-                  }}
-                />
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <SlidersHorizontal size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                    style={{
-                      backgroundColor: activeCategory === cat ? "rgba(0,212,170,0.15)" : "rgba(255,255,255,0.05)",
-                      color: activeCategory === cat ? "#00D4AA" : "rgba(255,255,255,0.45)",
-                      border: activeCategory === cat ? "1px solid rgba(0,212,170,0.3)" : "1px solid rgba(255,255,255,0.07)",
-                    }}
+            {/* filters */}
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-wrap justify-between gap-3 bg-[#181C27] p-2 rounded-2xl">
+
+                {/* Dates Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild className="flex-1 min-w-[120px]">
+                    <Button
+                      variant="outline"
+                      className={`w-full px-4 rounded-2xl h-12 text-s font-medium flex items-center gap-2 border-[rgba(255,255,255,0.08)] bg-[#181C27] hover:bg-[#1E2334] text-[rgba(255,255,255,0.6)] hover:text-white ${dateFilter !== "all" ? "border-[#00D4AA] text-[#00D4AA] bg-[rgba(0,212,170,0.05)]" : ""}`}
+                    >
+                      <Calendar size={14} />
+                      {dateFilter === "all" ? "Dates" : 
+                       dateFilter === "7d" ? "Last 7 days" :
+                       dateFilter === "30d" ? "Last 30 days" :
+                       dateFilter === "90d" ? "Last 90 days" :
+                       dateFilter === "this_month" ? "This month" : "Last month"}
+                      <ChevronDown size={14} className="ml-1 opacity-40" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-65 bg-[#181C27] border-[rgba(255,255,255,0.1)] text-[#fff] rounded-2xl">
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("all")}>All Time</DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("7d")}>Last 7 days</DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("30d")}>Last 30 days</DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("90d")}>Last 90 days</DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-[rgba(255,255,255,0.05)]" />
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("this_month")}>This month</DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" onClick={() => setDateFilter("last_month")}>Last month</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Categories Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild className="flex-1 min-w-[120px]">
+                    <Button
+                      variant="outline"
+                      className={`w-full px-4 rounded-2xl h-12 text-s font-medium flex items-center gap-2 border-[rgba(255,255,255,0.08)] bg-[#181C27] hover:bg-[#1E2334] text-[rgba(255,255,255,0.6)] hover:text-white ${selectedCategories.length > 0 ? "border-[#00D4AA] text-[#00D4AA] bg-[rgba(0,212,170,0.05)]" : ""}`}
+                    >
+                      <CheckCircle2 size={14} />
+                      {selectedCategories.length === 0 ? "Categories" : 
+                       selectedCategories.length === 1 ? selectedCategories[0] : 
+                       `${selectedCategories.length} Categories`}
+                      <ChevronDown size={14} className="ml-1 opacity-40" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-65 bg-[#181C27] border-[rgba(255,255,255,0.1)] text-[#fff] max-h-80 overflow-y-auto scrollbar-hide rounded-2xl">
+                    {CATEGORIES.filter(c => c !== "All").map((cat) => (
+                      <DropdownMenuCheckboxItem
+                        key={cat}
+                        checked={selectedCategories.includes(cat)}
+                        onCheckedChange={(checked) => {
+                          if (checked) setSelectedCategories([...selectedCategories, cat]);
+                          else setSelectedCategories(selectedCategories.filter(c => c !== cat));
+                        }}
+                        onSelect={(e) => e.preventDefault()}
+                        className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]"
+                      >
+                        {cat}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Accounts Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild className="flex-1 min-w-[120px]">
+                    <Button
+                      variant="outline"
+                      className={`w-full px-4 rounded-2xl h-12 text-s font-medium flex items-center gap-2 border-[rgba(255,255,255,0.08)] bg-[#181C27] hover:bg-[#1E2334] text-[rgba(255,255,255,0.6)] hover:text-white ${selectedAccounts.length > 0 ? "border-[#00D4AA] text-[#00D4AA] bg-[rgba(0,212,170,0.05)]" : ""}`}
+                    >
+                      <CreditCard size={14} />
+                      {selectedAccounts.length === 0 ? "Accounts" : 
+                       selectedAccounts.length === 1 ? (accounts.find(a => a.id === selectedAccounts[0])?.name || "1 Account") : 
+                       `${selectedAccounts.length} Accounts`}
+                      <ChevronDown size={14} className="ml-1 opacity-40" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-65 bg-[#181C27] border-[rgba(255,255,255,0.1)] text-[#fff] rounded-2xl">
+                    {accounts.length === 0 ? (
+                      <div className="p-2 text-center text-xs text-[rgba(255,255,255,0.3)]">No accounts found</div>
+                    ) : (
+                      accounts.map((acc) => (
+                        <DropdownMenuCheckboxItem
+                          key={acc.id}
+                          checked={selectedAccounts.includes(acc.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) setSelectedAccounts([...selectedAccounts, acc.id]);
+                            else setSelectedAccounts(selectedAccounts.filter(id => id !== acc.id));
+                          }}
+                          onSelect={(e) => e.preventDefault()}
+                          className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]"
+                        >
+                          {acc.name}
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Amounts Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild className="flex-1 min-w-[120px]">
+                    <Button
+                      variant="outline"
+                      className={`w-full px-4 rounded-2xl h-12 text-s font-medium flex items-center gap-2 border-[rgba(255,255,255,0.08)] bg-[#181C27] hover:bg-[#1E2334] text-[rgba(255,255,255,0.6)] hover:text-white ${amountFilter.type !== "any" ? "border-[#00D4AA] text-[#00D4AA] bg-[rgba(0,212,170,0.05)]" : ""}`}
+                    >
+                      <DollarSign size={14} />
+                      {amountFilter.type === "any" ? "Amounts" : 
+                       amountFilter.type === "exact" ? `$${amountFilter.value}` :
+                       amountFilter.type === "gt" ? `> $${amountFilter.value}` :
+                       amountFilter.type === "lt" ? `< $${amountFilter.value}` :
+                       `$${amountFilter.value} - $${amountFilter.toValue}`}
+                      <ChevronDown size={14} className="ml-1 opacity-40" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-65 bg-[#181C27] border-[rgba(255,255,255,0.1)] p-4 text-[#fff] rounded-2xl"
+                    onCloseAutoFocus={(e) => e.preventDefault()}
                   >
-                    {cat}
-                  </button>
-                ))}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">Condition</label>
+                        <Select
+                          value={amountFilter.type}
+                          onValueChange={(v: any) => setAmountFilter({ ...amountFilter, type: v })}
+                        >
+                          <SelectTrigger className="h-9 bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-xs">
+                            <SelectValue placeholder="Any amount" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#181C27] border-[rgba(255,255,255,0.1)] text-[#fff] rounded-2xl">
+                            <SelectItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" value="any">Any amount</SelectItem>
+                            <SelectItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" value="exact">Exact amount</SelectItem>
+                            <SelectItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" value="gt">Greater than</SelectItem>
+                            <SelectItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" value="lt">Less than</SelectItem>
+                            <SelectItem className="rounded-2xl focus:bg-[rgba(0,212,170,0.1)] focus:text-[#00D4AA]" value="between">Between</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {amountFilter.type !== "any" && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">
+                            {amountFilter.type === "between" ? "From Amount" : "Amount"}
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(255,255,255,0.3)] text-xs">$</span>
+                            <Input
+                              type="number"
+                              value={amountFilter.value}
+                              onChange={(e) => setAmountFilter({ ...amountFilter, value: e.target.value })}
+                              className="h-9 pl-7 bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-xs focus-visible:ring-[#00D4AA]"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {amountFilter.type === "between" && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-semibold uppercase tracking-widest text-[rgba(255,255,255,0.4)]">To Amount</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(255,255,255,0.3)] text-xs">$</span>
+                            <Input
+                              type="number"
+                              value={amountFilter.toValue}
+                              onChange={(e) => setAmountFilter({ ...amountFilter, toValue: e.target.value })}
+                              className="h-9 pl-7 bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.1)] text-xs focus-visible:ring-[#00D4AA]"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {amountFilter.type !== "any" && (
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setAmountFilter({ type: "any", value: "", toValue: "" })}
+                          className="w-full h-8 text-[10px] text-[#FF6B6B] hover:text-[#FF6B6B] hover:bg-[#FF6B6B10]"
+                        >
+                          Reset Amount
+                        </Button>
+                      )}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {hasActiveFilters && (
+                    <Button
+                        variant="ghost"
+                        onClick={clearAllFilters}
+                        className="h-12 text-s rounded-full font-medium text-black bg-white hover:bg-[#00D4AA] flex-1 sm:flex-initial"
+                    >
+                      <X size={14} />
+                      Clear All
+                    </Button>
+                )}
               </div>
             </div>
 
-            {/* Transactions table */}
+            {/* Transaction table */}
             <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: "#181C27", border: "1px solid rgba(255,255,255,0.07)" }}>
               {/* Table header */}
               <div
@@ -229,8 +594,8 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
               ) : filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>No transactions found</p>
-                  {(search || activeCategory !== "All") && (
-                    <button onClick={() => { setSearch(""); setActiveCategory("All"); }} className="text-xs" style={{ color: "#00D4AA" }}>
+                  {hasActiveFilters && (
+                    <button onClick={clearAllFilters} className="text-md" style={{ color: "#00D4AA" }}>
                       Clear filters
                     </button>
                   )}
@@ -255,7 +620,11 @@ export default function TransactionsPage({ userEmail }: TransactionsPageProps) {
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold shrink-0"
                           style={{ backgroundColor: `${catColor}18`, color: catColor }}
                         >
-                          {(tx.merchant_name || tx.name).slice(0, 1).toUpperCase()}
+                          {tx.category_icon ? (
+                            <img src={tx.category_icon} alt={tx.category} className="w-5 h-5 object-contain" />
+                          ) : (
+                            (tx.merchant_name || tx.name).slice(0, 1).toUpperCase()
+                          )}
                         </div>
                         <div>
                           <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.85)" }}>

@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '../../supabase/server'
 import { Button } from './ui/button'
-import { User, UserCircle } from 'lucide-react'
 import UserProfile from './user-profile'
 
 export default async function Navbar() {

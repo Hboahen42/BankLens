@@ -2,6 +2,9 @@
 
 @import "tailwindcss";
 
+@plugin "tailwindcss-animate";
+@config "../../tailwind.config.ts";
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -285,4 +288,13 @@
   background-color: rgba(255, 255, 255, 0.04);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

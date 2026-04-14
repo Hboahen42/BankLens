@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "../../../supabase/client";
 import AppShell from "@/components/banklens/app-shell";
 import ConnectBankHero from "@/components/banklens/connect-bank-hero";
@@ -48,6 +48,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   Entertainment: "#FFB347",
   Utilities: "#4FC3F7",
   Health: "#81C784",
+  Travel: "#EC4899",
+  Home: "#F59E0B",
+  "Personal Care": "#6366F1",
+  Services: "#10B981",
+  Government: "#6B7280",
+  Fees: "#EF4444",
+  Income: "#10B981",
+  Transfer: "#3B82F6",
+  Loan: "#F43F5E",
   Other: "rgba(255,255,255,0.3)",
 };
 
@@ -117,16 +126,28 @@ export default function DashboardOverview({ userEmail }: DashboardOverviewProps)
   const [refreshing, setRefreshing] = useState(false);
 
   const getPublicUserId = useCallback(async (authId: string) => {
-    const { data } = await supabase.from("users").select("id").eq("user_id", authId).single();
+    console.log("DashboardOverview: Fetching public user ID for authId:", authId);
+    const { data, error } = await supabase.from("users").select("id").eq("user_id", authId).single();
+    if (error) {
+      console.error("DashboardOverview: Error fetching public user ID:", error);
+    }
+    console.log("DashboardOverview: Public user ID result:", data?.id);
     return data?.id || null;
   }, [supabase]);
 
   const fetchAccounts = useCallback(async (pubId: string) => {
-    const { data } = await supabase
+    console.log("DashboardOverview: Fetching accounts for pubId:", pubId);
+    const { data, error } = await supabase
       .from("plaid_accounts")
       .select(`id, name, official_name, type, subtype, current_balance, available_balance, currency_code, connection:plaid_connections(institution_name, institution_color)`)
       .eq("user_id", pubId)
       .order("created_at", { ascending: true });
+    
+    if (error) {
+      console.error("DashboardOverview: Error fetching accounts:", error);
+    }
+    console.log("DashboardOverview: Accounts fetched:", data?.length);
+
     if (data && data.length > 0) {
       setAccounts(data.map((a) => ({ ...a, connection: Array.isArray(a.connection) ? a.connection[0] : a.connection })) as Account[]);
       return true;
@@ -135,20 +156,42 @@ export default function DashboardOverview({ userEmail }: DashboardOverviewProps)
   }, [supabase]);
 
   const fetchTransactions = useCallback(async (pubId: string) => {
-    const { data } = await supabase
+    console.log("DashboardOverview: Fetching transactions for pubId:", pubId);
+    const { data, error } = await supabase
       .from("plaid_transactions")
       .select("id, merchant_name, name, amount, date, category, pending")
       .eq("user_id", pubId)
       .order("date", { ascending: false })
       .limit(100);
+    
+    if (error) {
+      console.error("DashboardOverview: Error fetching transactions:", error);
+    }
+    console.log("DashboardOverview: Transactions fetched:", data?.length);
+    
     if (data) setTransactions(data);
   }, [supabase]);
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setIsConnected(false); return; }
+    console.log("DashboardOverview: Starting load...");
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error("DashboardOverview: Auth error:", authError);
+      setIsConnected(false);
+      return;
+    }
+    if (!user) {
+      console.log("DashboardOverview: No user found");
+      setIsConnected(false);
+      return;
+    }
+    console.log("DashboardOverview: Auth user found:", user.id);
     const pubId = await getPublicUserId(user.id);
-    if (!pubId) { setIsConnected(false); return; }
+    if (!pubId) {
+      console.error("DashboardOverview: No public user ID found for", user.id);
+      setIsConnected(false);
+      return;
+    }
     setUserId(pubId);
     const has = await fetchAccounts(pubId);
     setIsConnected(has);
@@ -238,7 +281,7 @@ export default function DashboardOverview({ userEmail }: DashboardOverviewProps)
 
         {isConnected === true && (
           <AppShell userEmail={userEmail} isConnected={true} onDisconnect={handleDisconnect}>
-            <div className="p-8 max-w-[1400px] mx-auto">
+            <div className="p-8 max-w-350 mx-auto">
               {/* Header */}
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -286,10 +329,21 @@ export default function DashboardOverview({ userEmail }: DashboardOverviewProps)
                           <stop offset="95%" stopColor="#00D4AA" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="day" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "Space Grotesk" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                      <XAxis
+                          dataKey="day"
+                          tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "Space Grotesk" }}
+                          axisLine={false}
+                          tickLine={false}
+                      />
+                      <YAxis
+                          tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontFamily: "JetBrains Mono" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => `$${v}`}
+                      />
                       <Tooltip
                         contentStyle={{ backgroundColor: "#1E2334", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontFamily: "Space Grotesk", color: "#fff" }}
+                        itemStyle={{ color: "#fff" }}
                         formatter={(v: number) => [fmt.format(v), "Spent"]}
                       />
                       <Area type="monotone" dataKey="amount" stroke="#00D4AA" strokeWidth={2} fill="url(#spendGrad)" />
@@ -311,20 +365,21 @@ export default function DashboardOverview({ userEmail }: DashboardOverviewProps)
                         <PieChart>
                           <Pie data={catData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={3} dataKey="value">
                             {catData.map((entry, i) => (
-                              <Cell key={i} fill={Object.values(CATEGORY_COLORS)[i % Object.values(CATEGORY_COLORS).length]} />
+                              <Cell key={i} fill={CATEGORY_COLORS[entry.name as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.Other} />
                             ))}
                           </Pie>
                           <Tooltip
                             contentStyle={{ backgroundColor: "#1E2334", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontFamily: "Space Grotesk", color: "#fff" }}
+                            itemStyle={{ color: "#fff" }}
                             formatter={(v: number) => [fmt.format(v)]}
                           />
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="flex flex-col gap-1.5 mt-2">
-                        {catData.map((c, i) => (
+                        {catData.map((c) => (
                           <div key={c.name} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: Object.values(CATEGORY_COLORS)[i % Object.values(CATEGORY_COLORS).length] }} />
+                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[c.name as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS.Other }} />
                               <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{c.name}</span>
                             </div>
                             <span className="text-xs font-medium" style={{ fontFamily: "JetBrains Mono", color: "rgba(255,255,255,0.8)" }}>{fmt.format(c.value)}</span>

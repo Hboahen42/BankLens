@@ -35,22 +35,49 @@ const MOCK_ACCOUNTS = [
 ];
 
 const MOCK_TRANSACTIONS = [
-  { transaction_id: "tx_001", name: "Starbucks Coffee", merchant_name: "Starbucks", amount: 6.75, date: "2024-05-28", category: "Food & Drink", pending: false },
-  { transaction_id: "tx_002", name: "Uber", merchant_name: "Uber", amount: 18.50, date: "2024-05-27", category: "Transport", pending: false },
-  { transaction_id: "tx_003", name: "Amazon.com", merchant_name: "Amazon", amount: 89.99, date: "2024-05-26", category: "Shopping", pending: false },
-  { transaction_id: "tx_004", name: "Whole Foods Market", merchant_name: "Whole Foods", amount: 67.43, date: "2024-05-25", category: "Groceries", pending: false },
-  { transaction_id: "tx_005", name: "Netflix", merchant_name: "Netflix", amount: 15.99, date: "2024-05-24", category: "Entertainment", pending: false },
-  { transaction_id: "tx_006", name: "Spotify", merchant_name: "Spotify", amount: 9.99, date: "2024-05-23", category: "Entertainment", pending: false },
-  { transaction_id: "tx_007", name: "Direct Deposit - Employer", merchant_name: "Employer", amount: -3500.00, date: "2024-05-22", category: "Income", pending: false },
-  { transaction_id: "tx_008", name: "Shell Gas Station", merchant_name: "Shell", amount: 52.18, date: "2024-05-21", category: "Transport", pending: false },
-  { transaction_id: "tx_009", name: "Trader Joe's", merchant_name: "Trader Joe's", amount: 43.21, date: "2024-05-20", category: "Groceries", pending: false },
-  { transaction_id: "tx_010", name: "Apple Store", merchant_name: "Apple", amount: 129.00, date: "2024-05-19", category: "Shopping", pending: false },
-  { transaction_id: "tx_011", name: "Chipotle", merchant_name: "Chipotle", amount: 12.45, date: "2024-05-18", category: "Food & Drink", pending: false },
-  { transaction_id: "tx_012", name: "Lyft", merchant_name: "Lyft", amount: 22.75, date: "2024-05-17", category: "Transport", pending: false },
-  { transaction_id: "tx_013", name: "Target", merchant_name: "Target", amount: 78.32, date: "2024-05-16", category: "Shopping", pending: false },
-  { transaction_id: "tx_014", name: "Gym Membership", merchant_name: "Planet Fitness", amount: 24.99, date: "2024-05-15", category: "Health", pending: false },
-  { transaction_id: "tx_015", name: "Electric Bill", merchant_name: "Con Edison", amount: 94.50, date: "2024-05-14", category: "Utilities", pending: false },
+  { transaction_id: "tx_001", name: "Starbucks Coffee", merchant_name: "Starbucks", amount: 6.75, date: "2024-05-28", category: "Food & Drink", personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_COFFEE_SHOP" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_FOOD_AND_DRINK.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_002", name: "Uber", merchant_name: "Uber", amount: 18.50, date: "2024-05-27", category: "Transport", personal_finance_category: { primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_TRANSPORTATION.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_003", name: "Amazon.com", merchant_name: "Amazon", amount: 89.99, date: "2024-05-26", category: "Shopping", personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_GENERAL_MERCHANDISE.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_004", name: "Whole Foods Market", merchant_name: "Whole Foods", amount: 67.43, date: "2024-05-25", category: "Groceries", personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_FOOD_AND_DRINK.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_005", name: "Netflix", merchant_name: "Netflix", amount: 15.99, date: "2024-05-24", category: "Entertainment", personal_finance_category: { primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_TV_AND_MOVIES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_ENTERTAINMENT.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_006", name: "Spotify", merchant_name: "Spotify", amount: 9.99, date: "2024-05-23", category: "Entertainment", personal_finance_category: { primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_MUSIC_AND_AUDIO" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_ENTERTAINMENT.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_007", name: "Direct Deposit - Employer", merchant_name: "Employer", amount: -3500.00, date: "2024-05-22", category: "Income", personal_finance_category: { primary: "INCOME", detailed: "INCOME_WAGES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_INCOME.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_008", name: "Shell Gas Station", merchant_name: "Shell", amount: 52.18, date: "2024-05-21", category: "Transport", personal_finance_category: { primary: "TRANSPORTATION", detailed: "TRANSPORTATION_GAS" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_TRANSPORTATION.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_009", name: "Trader Joe's", merchant_name: "Trader Joe's", amount: 43.21, date: "2024-05-20", category: "Groceries", personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_FOOD_AND_DRINK.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_010", name: "Apple Store", merchant_name: "Apple", amount: 129.00, date: "2024-05-19", category: "Shopping", personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ELECTRONICS" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_GENERAL_MERCHANDISE.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_011", name: "Chipotle", merchant_name: "Chipotle", amount: 12.45, date: "2024-05-18", category: "Food & Drink", personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANTS" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_FOOD_AND_DRINK.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_012", name: "Lyft", merchant_name: "Lyft", amount: 22.75, date: "2024-05-17", category: "Transport", personal_finance_category: { primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_TRANSPORTATION.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_013", name: "Target", merchant_name: "Target", amount: 78.32, date: "2024-05-16", category: "Shopping", personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_SUPERSTORES" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_GENERAL_MERCHANDISE.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_014", name: "Gym Membership", merchant_name: "Planet Fitness", amount: 24.99, date: "2024-05-15", category: "Health", personal_finance_category: { primary: "PERSONAL_CARE", detailed: "PERSONAL_CARE_GYMS_AND_FITNESS_CENTERS" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_PERSONAL_CARE.png", pending: false, pending_transaction_id: null },
+  { transaction_id: "tx_015", name: "Electric Bill", merchant_name: "Con Edison", amount: 94.50, date: "2024-05-14", category: "Utilities", personal_finance_category: { primary: "BILLS_AND_UTILITIES", detailed: "BILLS_AND_UTILITIES_ELECTRICITY" }, personal_finance_category_icon_url: "https://plaid-category-icons.plaid.com/PFC_BILLS_AND_UTILITIES.png", pending: false, pending_transaction_id: null },
 ];
+
+function formatCategory(category: string): string {
+  // Map Plaid's granular categories to broader UI categories
+  const cat = category.toUpperCase();
+
+  if (cat.startsWith('FOOD_AND_DRINK')) return 'Food';
+  if (cat.startsWith('TRANSPORTATION')) return 'Transport';
+  if (cat.startsWith('TRAVEL')) return 'Travel';
+  if (cat.startsWith('RENT_AND_UTILITIES')) return 'Utilities';
+  if (cat.startsWith('ENTERTAINMENT')) return 'Entertainment';
+  if (cat.startsWith('MEDICAL')) return 'Health';
+  if (cat.startsWith('GENERAL_MERCHANDISE')) return 'Shopping';
+  if (cat.startsWith('HOME_IMPROVEMENT')) return 'Home';
+  if (cat.startsWith('PERSONAL_CARE')) return 'Personal Care';
+  if (cat.startsWith('GENERAL_SERVICES')) return 'Services';
+  if (cat.startsWith('GOVERNMENT_AND_NON_PROFIT')) return 'Government';
+  if (cat.startsWith('BANK_FEES')) return 'Fees';
+  if (cat.startsWith('INCOME')) return 'Income';
+  if (cat.startsWith('TRANSFER')) return 'Transfer';
+  if (cat.startsWith('LOAN')) return 'Loan';
+
+  return category
+      .toLowerCase()
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -187,6 +214,9 @@ Deno.serve(async (req) => {
             secret: PLAID_SECRET,
             access_token: accessToken,
             cursor: cursor,
+            options: {
+              personal_finance_category_version: "v2",
+            },
           }),
         });
         const syncData = await syncResp.json();
@@ -261,7 +291,7 @@ Deno.serve(async (req) => {
 
         let txSaved = 0;
         for (const tx of accTransactions) {
-          const categoryStr = Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other");
+          const categoryStr = formatCategory(tx.personal_finance_category?.primary || tx.personal_finance_category?.detailed || (Array.isArray(tx.category) ? tx.category[0] : (tx.category || "Other")));
           const { error: txError } = await supabase.from("plaid_transactions").insert({
             account_id: savedAccount.id,
             user_id: publicUser.id,
@@ -271,6 +301,7 @@ Deno.serve(async (req) => {
             amount: tx.amount,
             date: tx.date,
             category: categoryStr,
+            category_icon: tx.personal_finance_category_icon_url,
             pending: tx.pending || false,
             pending_transaction_id: tx.pending_transaction_id,
           });

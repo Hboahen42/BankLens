@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, Loader2 } from "lucide-react";
 
 interface Transaction {
@@ -10,6 +10,7 @@ interface Transaction {
   amount: number;
   date: string;
   category: string;
+  category_icon?: string;
   pending: boolean;
   currency_code?: string;
 }
@@ -80,7 +81,11 @@ function TransactionRow({
   index: number;
 }) {
   const isCredit = tx.amount < 0;
-  const categoryIcon = CATEGORY_ICONS[tx.category] || "💳";
+  const categoryIcon = tx.category_icon ? (
+    <img src={tx.category_icon} alt={tx.category} className="w-6 h-6 object-contain" />
+  ) : (
+    CATEGORY_ICONS[tx.category] || "💳"
+  );
   const displayName = tx.merchant_name || tx.name;
 
   return (
@@ -264,7 +269,7 @@ export default function TransactionPanel({
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`filter-chip text-xs px-3 py-1.5 rounded-full transition-all ${activeCategory === cat ? "active" : ""}`}
+              className={`filter-chip text-xs px-3 py-1.5 rounded-full transition-all flex-1 min-w-[70px] ${activeCategory === cat ? "active" : ""}`}
             >
               {cat}
             </button>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CreditCard, TrendingUp, PieChart, Shield, Clock, Bell } from "lucide-react";
 import BackgroundImage from "@/components/landing/BackgroundImage";
+import React from "react";
 
 /* ──────────────────────────────────────────────
    Navbar

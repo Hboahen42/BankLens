@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "../../../supabase/client";
 import AppShell from "@/components/banklens/app-shell";
 import { Toaster } from "@/components/ui/sonner";
@@ -95,7 +95,7 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
     sessionTimeout: true,
     analyticsOptOut: false,
   });
-  const [theme, setTheme] = useState<"dark" | "system">("dark");
+  const [theme, setTheme] = useState<"dark" | "system" | "light">("dark");
   const [currency, setCurrency] = useState("USD");
 
   useEffect(() => {
@@ -311,6 +311,7 @@ export default function SettingsPage({ userEmail }: SettingsPageProps) {
                       {([
                         { id: "dark", label: "Dark", icon: Moon },
                         { id: "system", label: "System", icon: Smartphone },
+                        { id: "light", label: "Light", icon: Sun },
                       ] as const).map(({ id, label, icon: Icon }) => (
                         <button
                           key={id}
