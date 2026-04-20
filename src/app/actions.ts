@@ -201,7 +201,7 @@ export const resetPasswordAction = async (formData: FormData) => {
   }
 
   log.info("Password updated successfully");
-  return encodedRedirect("success", "/dashboard/reset-password", "Password updated");
+  return encodedRedirect("success", "/sign-in", "Password updated");
 };
 
 export const signOutAction = async () => {
