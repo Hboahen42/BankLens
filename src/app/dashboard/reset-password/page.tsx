@@ -7,7 +7,7 @@ import {PasswordInput} from "@/components/password-input";
 import {SubmitButton} from "@/components/submit-button";
 import {resetPasswordAction} from "@/app/actions";
 
-export default async function RestPassword(props: {
+export default async function ResetPassword(props: {
     searchParams: Promise<Message>;
 }) {
     const searchParams = await props.searchParams;
