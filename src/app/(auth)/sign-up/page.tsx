@@ -1,6 +1,7 @@
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import Link from "next/link";
 import { signUpAction } from "@/app/actions";
 import { UrlProvider } from "@/components/url-provider";
@@ -11,13 +12,6 @@ export default async function Signup(props: {
   searchParams: Promise<Message>;
 }) {
   const searchParams = await props.searchParams;
-  if ("message" in searchParams) {
-    return (
-      <div className="flex h-screen w-full flex-1 items-center justify-center p-4 sm:max-w-md">
-        <FormMessage message={searchParams} />
-      </div>
-    );
-  }
 
   return (
     <div className="relative overflow-hidden flex min-h-screen w-full">
@@ -89,27 +83,24 @@ export default async function Signup(props: {
                 </div>
 
                 {/* Password Field */}
-                <div className="flex flex-col gap-1.25 p-1">
-                  <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
-                    Password
-                  </label>
-                  <Input
+                <div className="relative mb-4">
+                  <PasswordInput
                     id="password"
-                    type="password"
                     name="password"
+                    label="Password"
                     placeholder="Enter a strong password"
                     minLength={6}
                     required
                     className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
                     style={{ backgroundColor: "transparent" }}
                   />
-                  <span className="font-inter font-normal text-white/40 text-[10px] leading-4 px-1">
+                  <span className="absolute left-1 -bottom-4 font-inter font-normal text-white/40 text-[10px] leading-4">
                     Must be at least 6 characters
                   </span>
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col p-1 gap-2.5">
                   <SubmitButton
                     formAction={signUpAction}
                     pendingText="Creating account..."

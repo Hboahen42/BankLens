@@ -2,6 +2,7 @@ import { signInAction } from "@/app/actions";
 import { FormMessage, Message } from "@/components/form-message";
 import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import Link from "next/link";
 import { ArrowUp } from "lucide-react";
 import BackgroundImage from "@/components/landing/BackgroundImage";
@@ -13,14 +14,6 @@ interface LoginProps {
 
 export default async function SignInPage({ searchParams }: LoginProps) {
   const message = await searchParams;
-
-  if ("message" in message) {
-    return (
-      <div className="flex h-screen w-full flex-1 items-center justify-center p-4 sm:max-w-md">
-        <FormMessage message={message} />
-      </div>
-    );
-  }
 
   return (
     <div className="relative overflow-hidden flex min-h-screen w-full">
@@ -75,21 +68,19 @@ export default async function SignInPage({ searchParams }: LoginProps) {
               </div>
 
               {/* Password Field */}
-              <div className="flex flex-col gap-1.25 p-1">
-                <label htmlFor="password" className="font-inter font-normal text-white text-sm leading-5 px-1">
-                  Password
-                </label>
-                <Input
+              <div className="relative mb-2">
+                <PasswordInput
                   id="password"
-                  type="password"
                   name="password"
+                  label="Password"
                   placeholder="Enter a strong password"
                   required
                   className="font-inter font-normal text-white/50 text-sm leading-5 rounded-md bg-transparent border border-white/15 px-4 py-2 placeholder:text-white/30 focus:outline-none focus:border-white/30 focus-visible:ring-0 focus-visible:ring-offset-0"
                   style={{ backgroundColor: "transparent" }}
                 />
+
                 <Link
-                    className="pt-2 text-right text-xs hover:underline transition-all"
+                    className="absolute right-1 top-2 text-right text-xs hover:underline transition-all"
                     href="/forgot-password"
                     style={{ color: "rgba(255,255,255,0.3)" }}
                 >
@@ -98,7 +89,7 @@ export default async function SignInPage({ searchParams }: LoginProps) {
               </div>
 
               {/* Submit Button */}
-              <div className="pt-4 flex flex-col gap-2.5">
+              <div className="p-1 pt-2 flex flex-col gap-2.5">
                 <SubmitButton
                   formAction={signInAction}
                   pendingText="Signing in..."
